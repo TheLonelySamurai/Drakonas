@@ -70,4 +70,68 @@ body{
     border-right:2px solid black;
     border-top: 2px solid black
 }
+.login-window{
+  
+  background-color:gray;
+  justify-content:center;
+  text-align:center;
+  padding:5px;
+  width:50%;
+  margin: 10% auto;
+}
+.request{
+  color:gold;
+  margin:25px 0;
+}
+.form-holder{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
 
+}
+.input-holder{
+  color:gold;
+  font-size:large;
+  margin-bottom:10px;
+}
+
+.word-input{
+  border-radius:5px;
+  width:300px;
+  margin-bottom:25px;
+  align-self:center;
+  height:20px;
+}
+.submit-button{
+  border:2px solid rgb(115, 115, 115);
+  width:50px;
+  color:white;
+  align-self:center;
+  background-color:gray;
+  text-align:center;
+}
+.submit-button :hover{
+  border:2px solid rgb(109, 109, 109);
+  background-color:rgb(120, 120, 120);
+}
+.profile-toolbar{
+  width:15%;
+  height:100vh;
+  background-color:gray;
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+  align-items:center;
+}
+.profile-toolbar-button{
+  height:70px;
+  width:70px;
+  justify-content:center;
+  background-color:gray;
+  border:solid gray;
+}
+.profile-toolbar-button :hover{
+  background-color:rgb(92, 92, 92);
+  border:solid rgb(92, 92, 92);
+  border-radius:5px;
+}
