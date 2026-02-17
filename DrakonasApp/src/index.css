@@ -3,6 +3,80 @@ body {
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+  color:white;
+}
+.header{
+    height:10%;
+    width: 100vw;
+    display:flex;
+    flex-direction:row;
+    background-color:gray
+}
+.header button{
+    margin: 2px 15px;
+    background-color:gray;
+    color:white;
+    border:solid gray;
+    padding:3px;
+
+}
+.header button:hover{
+    background-color:rgb(92, 92, 92);
+    border:solid rgb(92, 92, 92);
+}
+.toolbar{
+    width:5%;
+    display:flex;
+    background-color:gray;
+    display:flex;
+    flex-direction:column;
+    padding:5px;
+}
+.toolbar button{
+    margin: 2px 2px;
+    background-color:gray;
+}
+.toolbar button:hover{
+    background-color:rgb(92, 92, 92);
+    border:solid rgb(92, 92, 92);
+    border-radius:5px;
+}
+.workshop{
+    display:flex;
+    flex-direction:row;
+    height:90vh;
+}
+.animation-segments{
+    width:20%;
+}
+.preview{
+    height:30%;
+    justify-content:center;
+    border:2px solid black;
+}
+.frames{
+    height:70%;
+    border:2px solid black;
+}
+.canvas-holder{
+    width:50%;
+    justify-content:center;
+    padding:40px;
+}
+.canvas{
+    background-color:white;
+}
+body{
+    background-color:rgb(81, 81, 81);
+}
+.editing-segment{
+    width:25%;
+}
+.history{
+    height:30%;
+    border:2px solid black;
+}
+.layers{
+    height:70%;
+    border:2px solid black;
 }
