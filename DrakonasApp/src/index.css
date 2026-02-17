@@ -5,36 +5,20 @@ body {
   margin: auto;
   color:white;
 }
-.header{
-    height:10%;
-    width: 100vw;
-    display:flex;
-    flex-direction:row;
-    background-color:gray
-}
-.header button{
-    margin: 2px 15px;
-    background-color:gray;
-    color:white;
-    border:solid gray;
-    padding:3px;
-
-}
-.header button:hover{
-    background-color:rgb(92, 92, 92);
-    border:solid rgb(92, 92, 92);
-}
 .toolbar{
     width:5%;
     display:flex;
     background-color:gray;
     display:flex;
     flex-direction:column;
-    padding:5px;
+    padding:3px;
 }
 .toolbar button{
     margin: 2px 2px;
     background-color:gray;
+    border:solid gray;
+    height:40px;
+    width:40px;
 }
 .toolbar button:hover{
     background-color:rgb(92, 92, 92);
@@ -46,15 +30,23 @@ body {
     flex-direction:row;
     height:90vh;
 }
+.section-object{
+  height:20px;
+  padding:1px;
+  border-bottom:2px solid black;
+  background-color:rgb(72, 72, 72);
+}
 .animation-segments{
     width:20%;
 }
 .preview{
     height:30%;
     justify-content:center;
-    border:2px solid black;
+    border-right:2px solid black;
+    border-left:2px solid black;
+    border-top:2px solid black;
 }
-.frames{
+.large-part{
     height:70%;
     border:2px solid black;
 }
@@ -74,9 +66,8 @@ body{
 }
 .history{
     height:30%;
-    border:2px solid black;
+    border-left:2px solid black;
+    border-right:2px solid black;
+    border-top: 2px solid black
 }
-.layers{
-    height:70%;
-    border:2px solid black;
-}
+
