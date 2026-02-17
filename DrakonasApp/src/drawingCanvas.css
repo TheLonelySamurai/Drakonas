@@ -1,0 +1,38 @@
+.history{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    margin: 20px;
+    float: right;
+}
+.canvasContainer {
+    position: relative;
+    /* The canvas elements are stacked on top of each other */
+    width: 800px;
+    height: 600px;
+    
+}
+.canvas{
+        float: left;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+.previewContainer{
+    position: relative;
+    width: 400px;
+    height: 300px;
+    border: 10px solid black;
+    margin: 20px;
+    overflow: hidden;
+}
+.preview{
+    scale: 0.5;
+}
+.drawingApp{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+}
