@@ -17,4 +17,17 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],
   },
+  devServer: {
+  host: "localhost",
+  port: 3000,
+  hot: true,
+  client: {
+    webSocketURL: {
+      hostname: "localhost",
+      port: 3000,
+      protocol: "ws"
+    }
+  }
+}
+
 };
