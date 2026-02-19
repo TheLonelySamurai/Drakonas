@@ -2,10 +2,10 @@ import React from 'react';
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import ProjectPage from "./views/ProjectPage"
+import Settings from "./views/Settings"
 
 createRoot(document.body).render(
   <StrictMode>
-    <ProjectPage/>
+    <Settings/>
   </StrictMode>,
 )

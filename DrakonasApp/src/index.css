@@ -79,15 +79,21 @@ body{
   width:50%;
   margin: 10% auto;
 }
-.request{
+.heading{
+  font-size:larger;
   color:gold;
   margin:25px 0;
+  text-align:center;
 }
-.form-holder{
+.column-holder{
   display:flex;
   flex-direction:column;
   justify-content:center;
 
+}
+.row-holder{
+  display:flex;
+  width:100%;
 }
 .input-holder{
   color:gold;
@@ -102,15 +108,16 @@ body{
   align-self:center;
   height:20px;
 }
-.submit-button{
+.credentials-button{
   border:2px solid rgb(115, 115, 115);
   width:50px;
   color:white;
   align-self:center;
   background-color:gray;
   text-align:center;
+  margin-bottom:10px;
 }
-.submit-button :hover{
+.credentials-button :hover{
   border:2px solid rgb(109, 109, 109);
   background-color:rgb(120, 120, 120);
 }
@@ -134,4 +141,98 @@ body{
   background-color:rgb(92, 92, 92);
   border:solid rgb(92, 92, 92);
   border-radius:5px;
+}
+.audio-editor-canvas{
+  background-color:white;
+  justify-content:center;
+  margin:20px 0;
+  width:70vw;;
+  height:50vh;
+  align-self:center;
+}
+.audio-actions{
+  display:flex;
+  align-self:center;
+  justify-content:center;
+  width:90%;
+
+}
+.action-button{
+  margin:0 20px;
+  min-height:30px;
+  min-width:30px;
+}
+.timeline{
+  align-self:center;
+  height:30px;
+  width:90%;
+  border:2px solid white;
+  margin:5px 0;
+}
+.profile-page{
+  display:flex;
+  flex-direction:column;
+  width:30vw;
+}
+.profile-pic{
+  margin:120px 0 10px 0;
+  height:150px;
+  width:150px;
+  border:2px solid black;
+  border-radius:100px;
+  align-self:center;
+}
+.info-title{
+  color:gold;
+  font-size:x-large;
+  margin-right:5px;
+}
+.info{
+  font-size:x-large
+}
+.view-half-info-1{
+display:flex;
+width:50%;
+flex-direction:column;
+justify-content:right;
+}
+.view-half-info-2{
+  display:flex;
+  width:50%;
+  flex-direction:column;
+  justify-content:left;
+  margin-left:10px;
+}
+.view-half-button{
+  display:flex;
+  width:50%;
+  justify-content:center;
+}
+.center{
+  display:flex;
+  justify-content:center;
+  text-align:center;
+}
+.profile-row-holder{
+display:flex;
+width:100%;
+margin-top:20px;
+}
+.settings-left{
+  display:flex;
+  width:50%;
+  flex-direction:column;
+  text-align:right;
+  border-right:2px solid black;
+  padding-right:10px;
+}
+.settings-right{
+  display:flex;
+  width:50%;
+  flex-direction:column;
+  justify-content:left;
+  margin-left:10px;
+}
+.setting-card{
+  font-size:x-large;
 }
