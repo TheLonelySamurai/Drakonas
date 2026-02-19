@@ -33,9 +33,8 @@ coverage
 build/Release
 
 # Dependency directories
-node_modules/
-!node_modules/electron/dist/resources/
-node_modules/electron/dist/resources/default_app.asar
+/node_modules/*
+!/node_modules/electron/dist/resources/
 jspm_packages/
 
 # TypeScript v1 declaration files
