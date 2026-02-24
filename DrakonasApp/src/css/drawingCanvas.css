@@ -1,3 +1,11 @@
+.drawingCanvasContainer{
+    display: none;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    
+}
 .history{
     position: relative;
     display: flex;

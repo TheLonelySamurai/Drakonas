@@ -1,14 +1,17 @@
 import { useState } from 'react'
+import GoToWorkshop from './Partials/GoToWorkshopButton';
 function ProjectType(){
     const [count,setCount] = useState(0)
     return(
-        <body className="body-screen">
+        <>
+        <div className="body-screen page">
           <div className="column-holder column-holder-buttons">
-            <button className="project-button">Short Form</button>
-            <button className="project-button">Long Form</button>
-            <button className="project-button">Character/Item Animator</button>
+            <GoToWorkshop name="Short Form"/>
+            <GoToWorkshop name="Long Form"/>
+            <GoToWorkshop name="Character/Item Animator"/>
         </div>  
-        </body>
+        </div>
+        </>
         
     )
 }

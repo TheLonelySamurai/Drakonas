@@ -201,7 +201,7 @@ function DrawingCanvas() {
             }
     }
     return (
-        <>
+        <div className="drawingCanvasContainer">
         <div className="drawingApp">
             <div className="canvasContainer">
                 <canvas className='canvas'
@@ -339,7 +339,7 @@ function DrawingCanvas() {
             Export To Gif
         </button>
     </div>
-    </>
+    </div>
     );
 }
 

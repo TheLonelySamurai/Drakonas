@@ -82,7 +82,6 @@ app.whenReady().then(async () => {
   await waitForBackend();
   ipcMain.handle('ping', () => 'pong')
   var win = createWindow()
-  
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {

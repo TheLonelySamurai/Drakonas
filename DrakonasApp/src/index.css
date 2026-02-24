@@ -5,6 +5,9 @@ body {
   margin: auto;
   color:white;
 }
+.page{
+  display: none;
+}
 .toolbar{
     width:5%;
     display:flex;
