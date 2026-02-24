@@ -6,11 +6,12 @@ import Backend from './callBackend';
 import DrawingCanvas from './views/drawingCanvas';
 import ProjectType from "./views/ProjectType"
 import Workshop from "./views/Workshop"
+import Login from "./views/Login"
+import SignUp from "./views/SignUp"
 
 createRoot(document.body).render(
   <StrictMode>
-    <DrawingCanvas/>
-    <ProjectType/>
-    <Workshop/>
+    <Login/>
+    <SignUp/>
   </StrictMode>,
 )
