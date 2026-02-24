@@ -2,8 +2,9 @@ import { useState } from 'react'
 function ProfilePage(){
     const [count,setCount] = useState(0)
     return(
-        <body className="profile-page">
-            <div className="profile-pic">Profile Picture</div>
+        <div className="profile-page">
+    <div className="page" id="profile">
+        <div className="profile-pic">Profile Picture</div>
             <div className="profile-row-holder">
                 <div className="view-half-info-1"><span className="info-title">Username:</span>
                 <span className="info-title">Email:</span>
@@ -16,7 +17,8 @@ function ProfilePage(){
                 <div className="view-half-button"><button>Reset Password</button></div>
                 <div className="view-half-button"><button>Reset Email</button></div>
             </div>
-        </body>
+    </div>     
+        </div>
     )
 }
 export default ProfilePage;
