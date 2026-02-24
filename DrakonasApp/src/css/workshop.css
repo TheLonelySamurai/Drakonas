@@ -1,0 +1,50 @@
+
+.workshop{
+    display:flex;
+    flex-direction:row;
+}
+.toolbar{
+    width:120px;
+    display:flex;
+    background-color:gray;
+    display:flex;
+    flex-direction:column;
+    height: 100vh;
+}
+.toolbar button{
+    margin: 12px 12px;
+    border-radius: 12px;
+    background-color:rgb(90, 84, 84);
+    border:solid gray;
+    height:40px;
+    min-width:40px;
+    color: white
+}
+.toolbar button:hover{
+    background-color:rgb(92, 92, 92);
+    border:solid rgb(219, 218, 218);
+    border-radius:25px;
+    transition: all 0.2s ease-in-out;
+}
+.preview{
+    height:24%;
+    justify-content:center;
+    border-right:2px solid black;
+    border-left:2px solid black;
+    border-top:2px solid black;
+}
+.canvas-holder{
+}
+.animation-segments{
+    width:20%;
+}
+.large-part{
+    height:70%;
+    border:2px solid black;
+}
+.section-object{
+  height:20px;
+  padding:1px;
+  border-bottom:2px solid black;
+  background-color:rgb(72, 72, 72);
+}

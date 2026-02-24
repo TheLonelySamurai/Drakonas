@@ -12,6 +12,7 @@ function Navigation( {name}:{name:string}){
         const workshopElement = document.querySelector('.workshop') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
+          console.log("Workshop Element Found and Displayed");
         }
     
     }

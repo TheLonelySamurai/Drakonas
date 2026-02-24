@@ -220,13 +220,6 @@ function DrawingCanvas() {
                     
                 />
             </div>
-            <div className='previewContainer'>
-                <canvas className='preview'
-                    ref={previewCanvasRef}
-                    width={800}
-                    height={600}
-                />
-            </div>
         </div>
     <button onClick={() => {
         const canvas = canvasRef.current;

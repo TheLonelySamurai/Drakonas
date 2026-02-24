@@ -1,9 +1,10 @@
 .drawingCanvasContainer{
-    display: none;
-    flex-direction: row;
+    display: flex;
+    flex-direction: column;
     justify-content: space-between;
     align-items: flex-start;
     width: 100%;
+    z-index: -10;
     
 }
 .history{
@@ -43,4 +44,10 @@
     justify-content: space-between;
     align-items: flex-start;
     width: 100%;
+}
+.animation{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-start;
 }

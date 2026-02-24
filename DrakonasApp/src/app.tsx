@@ -9,7 +9,6 @@ import Workshop from "./views/Workshop"
 
 createRoot(document.body).render(
   <StrictMode>
-    <DrawingCanvas/>
     <ProjectType/>
     <Workshop/>
   </StrictMode>,
