@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="417271e2-ccf5-40c6-be37-9ad8f8afc080" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/forge.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/forge.config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/app.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/app.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/index.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/preload.ts" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/preload.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/renderer.ts" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/renderer.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DrakonasApp/src/views/drawingCanvas.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/DrakonasApp/src/views/drawingCanvas.tsx" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 1
+}]]></component>
+  <component name="ProjectId" id="39oPpZqCypCNxWF3z1h5uIq4BdA" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "electron-setup",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/tealw/Documents/GitHub/Drakonas",
+    "settings.editor.selected.configurable": "project.propVCSSupport.Mappings"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="417271e2-ccf5-40c6-be37-9ad8f8afc080" name="Changes" comment="" />
+      <created>1771359633985</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1771359633985</updated>
+    </task>
+    <servers />
+  </component>
+</project>

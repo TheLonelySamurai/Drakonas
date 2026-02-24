@@ -1,7 +1,8 @@
 
 import { useRef, useEffect } from 'react';
+import { Menu, webContents } from 'electron';
 
-import './drawingCanvas.css';
+import '../css/drawingCanvas.css';
 
 // import GIF from 'gif.js';
 
@@ -26,6 +27,9 @@ function DrawingCanvas() {
         const ctx = canvas.getContext('2d');
         clearCanvas();
         clearOnionSkin();
+        
+        window.historyAPI.onUndo(() => undo());
+        window.historyAPI.onRedo(() => redo());
     }, []);
 
     function saveFrame() {
@@ -182,6 +186,20 @@ function DrawingCanvas() {
 
         lastPos.current = pos;
     }
+    function undo(){
+        const lastPath = paths.current.pop();
+        if (lastPath) {
+            undonePaths.current.push(lastPath);
+            redrawCanvas();
+        }
+    }
+    function redo(){
+            const lastUndonePath = undonePaths.current.pop();
+            if (lastUndonePath) {
+                paths.current.push(lastUndonePath);
+                redrawCanvas();
+            }
+    }
     return (
         <>
         <div className="drawingApp">
@@ -199,6 +217,7 @@ function DrawingCanvas() {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handleMouseMove}
+                    
                 />
             </div>
             <div className='previewContainer'>
@@ -235,11 +254,7 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            const lastPath = paths.current.pop();
-            if (lastPath) {
-                undonePaths.current.push(lastPath);
-                redrawCanvas();
-            }
+            undo();
         }}>
             Undo Paths
         </button>
@@ -248,11 +263,7 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            const lastUndonePath = undonePaths.current.pop();
-            if (lastUndonePath) {
-                paths.current.push(lastUndonePath);
-                redrawCanvas();
-            }
+            redo();
         }}>
             Redo Paths
         </button>
