@@ -15,11 +15,10 @@
     float: right;
 }
 .canvasContainer {
-    position: relative;
     /* The canvas elements are stacked on top of each other */
     width: 800px;
-    height: 600px;
-    
+    height: 600px;  
+    position: absolute
 }
 .canvas{
         float: left;
@@ -35,15 +34,16 @@
     margin: 20px;
     overflow: hidden;
 }
-.preview{
-    scale: 0.5;
-}
 .drawingApp{
+    position: relative;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
-    width: 100%;
+    width: 900px;
+    height: 900px;
+    border-bottom: 4px solid black;
+    overflow: hidden;
 }
 .animation{
     display: flex;

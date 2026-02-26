@@ -80,7 +80,6 @@ const createWindow = (): BrowserWindow => {
 app.whenReady().then(async () => {
   startJavaBackend();
   await waitForBackend();
-  ipcMain.handle('ping', () => 'pong')
   var win = createWindow()
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({

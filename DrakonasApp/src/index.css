@@ -8,20 +8,8 @@ body {
 .page{
   display: none;
 }
-.canvas{
-    background-color:white;
-}
 body{
     background-color:rgb(81, 81, 81);
-}
-.editing-segment{
-    width:25%;
-}
-.history{
-    height:30%;
-    border-left:2px solid black;
-    border-right:2px solid black;
-    border-top: 2px solid black
 }
 .login-window{
   

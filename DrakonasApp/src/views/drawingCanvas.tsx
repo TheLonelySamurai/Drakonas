@@ -3,15 +3,17 @@ import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
 
 import '../css/drawingCanvas.css';
-
-// import GIF from 'gif.js';
-
 function DrawingCanvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const framesHandler = useRef<HTMLDivElement | null>(null);
+    const historyHandler = useRef<HTMLDivElement | null>(null);
     const onionSkinEnabled = useRef(false);
+    const currentScale = useRef(1);
     const isDrawing = useRef(false);
+    const isMovingCanvas = useRef(false);
+    const movingCanvas = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
     const paths = useRef<Path2D[]>([]);
     const undonePaths = useRef<Path2D[]>([]);
@@ -22,6 +24,14 @@ function DrawingCanvas() {
     
     useEffect(() => {
         // Runs AFTER render
+        const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
+        if (framesHolder) {
+            framesHolder.appendChild(framesHandler.current);
+        }
+        const historyHolder = document.querySelector('.history-holder') as HTMLElement;
+        if (historyHolder) {
+            historyHolder.appendChild(historyHandler.current);
+        }
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -98,6 +108,9 @@ function DrawingCanvas() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         clearCanvas();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'black';
+        ctx.lineCap = 'round';
         paths.current.forEach(path => {
             ctx.stroke(path);
         });
@@ -142,21 +155,25 @@ function DrawingCanvas() {
     // }
     function getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
+        
         return {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
+            x: (e.clientX - rect.left) / currentScale.current,
+            y: (e.clientY - rect.top) / currentScale.current,
         };
     }
 
     function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
+        if (isMovingCanvas.current) return; // Don't start drawing if we're moving the canvas
         // Reset the undone paths when starting a new path
         undonePaths.current = [];
         isDrawing.current = true;
         lastPos.current = getMousePos(e);
         p.current = new Path2D();
-        }
+        
+    }
 
-        function handleMouseUp() {
+    function handleMouseUp() {
+        if(isMovingCanvas.current) return; // Don't stop drawing if we're moving the canvas
         isDrawing.current = false;
         //Need to save the current path now!
         if (p.current){
@@ -167,6 +184,7 @@ function DrawingCanvas() {
     }
 
     function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
+        if(isMovingCanvas.current) return; // Don't draw if we're moving the canvas
         if (!isDrawing.current) return;
 
         const canvas = canvasRef.current;
@@ -180,11 +198,61 @@ function DrawingCanvas() {
             p.current = new Path2D();
             p.current.moveTo(pos.x, pos.y);
         }
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'black';
+        ctx.lineCap = 'round';
         p.current.moveTo(lastPos.current.x, lastPos.current.y);
         p.current.lineTo(pos.x, pos.y);
         ctx.stroke(p.current);
 
         lastPos.current = pos;
+    }
+    
+    function getMousePosMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
+        const rect = e.currentTarget.getBoundingClientRect();
+        return {
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+        };
+    }
+
+    function handleMouseDownMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
+        // Reset the undone paths when starting a new path
+        if (isMovingCanvas.current) {
+            movingCanvas.current = true;
+            lastPos.current = getMousePosMoveCanvas(e);
+        }
+        
+    }
+
+    function handleMouseUpMoveCanvas() {
+        if (movingCanvas.current) {
+            movingCanvas.current = false;
+        }
+    }
+
+    function handleMouseMoveMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
+        if (movingCanvas.current) {
+            const pos = getMousePosMoveCanvas(e);
+            const dx = pos.x - lastPos.current.x;
+            const dy = pos.y - lastPos.current.y;
+            moveCanvas(dx, dy);
+            lastPos.current = pos;
+        }
+    }
+    function handleMouseScrollMoveCanvas(e: React.WheelEvent<HTMLDivElement>) {
+        if (isMovingCanvas.current) {
+            const delta = e.deltaY;
+            scaleCanvas(delta > 0 ? 0.95 : 1.05);
+        }
+        else{            
+            const deltay = e.deltaY;
+            if (e.shiftKey) {
+                moveCanvas(deltay/10, 0);
+            }else  {
+                moveCanvas(0, -deltay/10);
+            }
+        }
     }
     function undo(){
         const lastPath = paths.current.pop();
@@ -200,10 +268,50 @@ function DrawingCanvas() {
                 redrawCanvas();
             }
     }
+    
+    function moveCanvas(dx: number, dy: number) {
+        const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
+        const currentTransform = canvasContainer.style.transform || 'translate(0px, 0px)';
+        const match = currentTransform.match(/translate\((-?\d+)px, (-?\d+)px\)/);
+        let currentX = 0;
+        let currentY = 0;
+        if (match) {
+            currentX = parseInt(match[1]);
+            currentY = parseInt(match[2]);
+        }
+        canvasContainer.style.transform = `translate(${currentX + dx}px, ${currentY + dy}px)`;
+    }
+    function scaleCanvas(scaleFactor: number) {
+        const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
+        const canvases = canvasContainer.querySelectorAll('canvas');
+        currentScale.current *= scaleFactor;
+        canvases.forEach(canvas => {
+            const rect = canvas.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const offsetX = (centerX - window.innerWidth / 2) * (scaleFactor - 1);
+            const offsetY = (centerY - window.innerHeight / 2) * (scaleFactor - 1);
+            canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentScale.current})`;
+        });
+    }
+    function moveCanvasButton(){
+        if (isMovingCanvas.current) {
+            isMovingCanvas.current = false;
+            document.querySelector('#moveCanvasButton').textContent = "Move Canvas";
+        } else {
+            isMovingCanvas.current = true;
+            document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
+        }
+    }
     return (
-        <div className="drawingCanvasContainer">
-        <div className="drawingApp">
-            <div className="canvasContainer">
+    <div className="drawingCanvasContainer">
+        <div className="drawingApp"
+                    onMouseDown={handleMouseDownMoveCanvas}
+                    onMouseUp={handleMouseUpMoveCanvas}
+                    onMouseLeave={handleMouseUpMoveCanvas}
+                    onMouseMove={handleMouseMoveMoveCanvas}
+                    onWheel={handleMouseScrollMoveCanvas}>
+            <div className="canvasContainer" >
                 <canvas className='canvas'
                     ref={canvasOnionRef}
                     width={800}
@@ -217,56 +325,67 @@ function DrawingCanvas() {
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onMouseMove={handleMouseMove}
-                    
                 />
             </div>
         </div>
-    <button onClick={() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        clearCanvas();
-        
-    }}>
-        Clear Canvas
-    </button>
-    <div className="history">
-        <h3>History of Paths</h3>
         <button onClick={() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            redrawCanvas();
+            clearCanvas();
+            
         }}>
-            Redraw Paths
+            Clear Canvas
         </button>
         <button onClick={() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            undo();
-        }}>
-            Undo Paths
+            moveCanvasButton();
+            
+        }}
+            id='moveCanvasButton'>
+            Move Canvas
+            
         </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            redo();
-        }}>
-            Redo Paths
-        </button>
-        <ul>
-            {paths.current.map((path, index) => (
-                <li key={index}>Path {index + 1}</li>
-            ))}
-        </ul>
-    </div>
-    <div className="animation">
+        <div className="history" ref={historyHandler}>
+            <h3>History of Paths</h3>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                redrawCanvas();
+            }}>
+                Redraw Paths
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                undo();
+            }}>
+                Undo Paths
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                redo();
+            }}>
+                Redo Paths
+            </button>
+            <ul>
+                {paths.current.map((path, index) => (
+                    <li key={index}>Path {index + 1}</li>
+                ))}
+            </ul>
+        </div>
+        <div className="history" ref ={framesHandler}>
         <h3>Animation Handler</h3>
         <button onClick={() => {
             const canvas = canvasRef.current;
@@ -331,9 +450,8 @@ function DrawingCanvas() {
         }}>
             Export To Gif
         </button>
-    </div>
+        </div>
     </div>
     );
 }
-
 export default DrawingCanvas;

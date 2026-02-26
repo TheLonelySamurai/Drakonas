@@ -17,7 +17,7 @@ function Navigation( {name}:{name:string}){
     
     }
     return <> 
-     <button className="project-button" onClick={goToWorkshop}>{name}</button>
+     <button className="project-button"  onClick={goToWorkshop}>{name}</button>
       </>
 }
 export default Navigation;
