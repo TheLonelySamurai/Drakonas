@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain, screen } from 'electron';
 import menu  from './menu';
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
+import ProjectPage from './views/ProjectPage'
 
 let javaProcess: ChildProcess | null = null;
 
@@ -73,7 +74,9 @@ const createWindow = (): BrowserWindow => {
   mainWindow.webContents.openDevTools();
   return mainWindow;
 };
-
+function goToProjects(){
+ ProjectPage();
+}
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
