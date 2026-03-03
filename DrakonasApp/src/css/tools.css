@@ -1,0 +1,27 @@
+.tool_icon{
+  height:50px;
+  width:50px;
+  background-position:center;
+  background-size:contain;
+}
+.pen{
+background-image:url('../other/pen_tool.png');
+}
+.tool_icon .eraser{
+  background-image:url('../other/eraser_tool.png')
+}
+.tool_icon .air_brush{
+  background-image:url('../other/air_brush_tool.png');
+}
+.tool_icon .pixel_perfect{
+  background-image:url('../other/pixel_perfect_tool.png');
+}
+.tool_icon .fill{
+  background-image:url('../other/fill_tool.png');
+}
+.tool_icon .shape{
+  background-image:url('../other/shape_tool.png');
+}
+.tool_icon .rotate{
+  background-image:url('../other/rotate_tool.png');
+}

@@ -9,13 +9,9 @@ import Workshop from "./views/Workshop"
 import ProjectPage from "./views/ProjectPage"
 import Settings from "./views/Settings"
 import ProfilePage from "./views/ProfilePage"
-
+import WorkshopToolbar from "./views/WorkshopToolbar"
 createRoot(document.body).render(
   <StrictMode>
-    <ProjectPage/>
-    <Workshop/>
-    <ProfilePage/>
-    <Settings/>
-    <ProjectType/>
+  <WorkshopToolbar/>
   </StrictMode>,
 )
