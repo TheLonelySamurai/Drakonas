@@ -21,6 +21,7 @@ export const mainConfig: Configuration = {
   host: "localhost",
   port: 3000,
   hot: true,
+  liveReload: false,
   client: {
     webSocketURL: {
       hostname: "localhost",

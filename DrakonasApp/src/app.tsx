@@ -9,6 +9,7 @@ import Workshop from "./views/Workshop"
 
 createRoot(document.body).render(
   <StrictMode>
+    <Backend/>
     <ProjectType/>
     <Workshop/>
   </StrictMode>,

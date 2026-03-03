@@ -78,8 +78,6 @@ const createWindow = (): BrowserWindow => {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  startJavaBackend();
-  await waitForBackend();
   var win = createWindow()
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
