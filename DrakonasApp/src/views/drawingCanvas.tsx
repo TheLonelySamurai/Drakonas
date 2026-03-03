@@ -9,6 +9,7 @@ function DrawingCanvas() {
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
+    const animationHandler = useRef<HTMLDivElement | null>(null);
     const onionSkinEnabled = useRef(false);
     const currentScale = useRef(1);
     const isDrawing = useRef(false);
@@ -28,6 +29,10 @@ function DrawingCanvas() {
         if (framesHolder) {
             framesHolder.appendChild(framesHandler.current);
         }
+        const animationHolder = document.querySelector('.animation-holder') as HTMLElement;
+        if (animationHolder) {  
+            animationHolder.appendChild(animationHandler.current);
+        }
         const historyHolder = document.querySelector('.history-holder') as HTMLElement;
         if (historyHolder) {
             historyHolder.appendChild(historyHandler.current);
@@ -45,12 +50,13 @@ function DrawingCanvas() {
     function saveFrame() {
         // Save the current paths into the current frame
         frames.current[currentFrameIndex.current] = [...paths.current];
+        // Update the preview for this frame
+        addPreviewFrameToFramesHandler(currentFrameIndex.current);
 
     }
     
     function newFrame() {
-        // Save the current paths as a new frame
-        frames.current.push([...paths.current]);
+        saveFrame(); // Save the current frame before creating a new one
         currentFrameIndex.current = frames.current.length ; // Move to the new frame
         clearCanvas();
         if (onionSkinEnabled.current){
@@ -181,6 +187,7 @@ function DrawingCanvas() {
             
         }
         p.current = null;
+        saveFrame(); // Save the frame after finishing a path
     }
 
     function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -303,6 +310,98 @@ function DrawingCanvas() {
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
+
+    function removeFrame(frameIndex: number){
+        
+        if (frameIndex < 0 || frameIndex >= frames.current.length) return;
+        frames.current.splice(frameIndex, 1);
+        // If the removed frame is before the current frame, adjust the current frame index
+        if (currentFrameIndex.current > frameIndex) {
+            currentFrameIndex.current--;
+        }
+        loadFrame(currentFrameIndex.current); // Reload the current frame to update the canvas
+        // Update the preview for all frames after the removed frame
+        clearPreviewFrames();
+        for (let i = frameIndex; i < frames.current.length; i++) {
+            addPreviewFrameToFramesHandler(i);
+        }
+    }
+
+    function clearPreviewFrames() {
+        const framesHolder = framesHandler.current;
+        if (!framesHolder) return;
+        framesHolder.innerHTML = '';  
+    }
+    function removePreviewFrame(frameIndex: number){
+        const framesHolder = framesHandler.current;
+        if (!framesHolder) return;
+        const previewCanvases = framesHolder.querySelectorAll('.frame');
+        if (frameIndex < 0 || frameIndex >= previewCanvases.length) return;
+        previewCanvases.forEach((canvas) => {
+            if (canvas.id === `frame-${frameIndex}`) {
+                framesHolder.removeChild(canvas);
+            }
+        });
+
+    }
+    function addPreviewFrameToFramesHandler(frameIndex: number) {
+        const framePreviewContainer = document.createElement('div');
+        const frameLabel = document.createElement('div');
+        frameLabel.textContent = `Frame ${frameIndex + 1}`;
+        frameLabel.style.textAlign = 'center';
+        frameLabel.style.fontSize = '12px';
+        frameLabel.style.marginBottom = '4px';
+        framePreviewContainer.appendChild(frameLabel);
+        const frameDeleteButton = document.createElement('button');
+        frameDeleteButton.textContent = 'X';
+        frameDeleteButton.style.position = 'absolute';
+        frameDeleteButton.style.top = '0';
+        frameDeleteButton.style.right = '0';
+        frameDeleteButton.style.background = 'red';
+        frameDeleteButton.style.color = 'white';
+        frameDeleteButton.style.border = 'none';
+        frameDeleteButton.addEventListener('click', () => {
+            removeFrame(frameIndex);
+        });
+        framePreviewContainer.appendChild(frameDeleteButton);
+        const frameCanvasButton = document.createElement('button');
+        const frameCanvas = document.createElement('canvas');
+        frameCanvas.width = 800;
+        frameCanvas.height = 600;
+        const ctx = frameCanvas.getContext('2d');
+        if (!ctx) return;
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'black';
+        ctx.lineCap = 'round';
+        frames.current[frameIndex].forEach(path => {
+            ctx.stroke(path);
+        });
+        //resize the preview canvas to be smaller
+        frameCanvas.style.width = '160px';
+        frameCanvas.style.height = '120px';
+        frameCanvasButton.appendChild(frameCanvas);
+        frameCanvasButton.addEventListener('click', () => {
+            loadFrame(frameIndex);
+        });
+        framePreviewContainer.style.position = 'relative';
+        framePreviewContainer.appendChild(frameCanvasButton);
+        framePreviewContainer.id = `frame-${frameIndex}`;
+        framePreviewContainer.className = 'frame';
+        //If the frame already has a preview, remove it before adding the new one
+        removePreviewFrame(frameIndex);
+        //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
+        const framesHolder = framesHandler.current;
+        if (!framesHolder) return;
+        const previewCanvases = framesHolder.querySelectorAll('.frame');
+        if (frameIndex >= previewCanvases.length) {
+            framesHolder.appendChild(framePreviewContainer);
+        } else {
+            framesHolder.insertBefore(framePreviewContainer, previewCanvases[frameIndex]);
+        }
+    }
+
     return (
     <div className="drawingCanvasContainer">
         <div className="drawingApp"
@@ -328,29 +427,7 @@ function DrawingCanvas() {
                 />
             </div>
         </div>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            clearCanvas();
-            
-        }}>
-            Clear Canvas
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            moveCanvasButton();
-            
-        }}
-            id='moveCanvasButton'>
-            Move Canvas
-            
-        </button>
-        <div className="history" ref={historyHandler}>
+        <div className="dc-vert-container" ref={historyHandler}>
             <h3>History of Paths</h3>
             <button onClick={() => {
                 const canvas = canvasRef.current;
@@ -385,7 +462,29 @@ function DrawingCanvas() {
                 ))}
             </ul>
         </div>
-        <div className="history" ref ={framesHandler}>
+        <div className="dc-hor-container" ref ={animationHandler}>
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            clearCanvas();
+            
+        }}>
+            Clear Canvas
+        </button>
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            moveCanvasButton();
+            
+        }}
+            id='moveCanvasButton'>
+            Move Canvas
+            
+        </button>
         <h3>Animation Handler</h3>
         <button onClick={() => {
             const canvas = canvasRef.current;
@@ -451,6 +550,7 @@ function DrawingCanvas() {
             Export To Gif
         </button>
         </div>
+        <div className='dc-vert-container' ref={framesHandler}></div>
     </div>
     );
 }

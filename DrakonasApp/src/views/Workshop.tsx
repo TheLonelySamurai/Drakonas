@@ -31,6 +31,7 @@ function Workshop(){
             </div>
             <div className="canvas-holder">
                 <DrawingCanvas/>
+                <div className="animation-holder"></div>
             </div>
             <div className="editing-segment">
                 <div className="history-container">
