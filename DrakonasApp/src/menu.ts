@@ -25,9 +25,18 @@ const template = [
     submenu: [
         {
             label: 'Projects',
-            click: async () =>{
-                console.log("Projects Clicked!")
-            }
+            click: async () =>{        
+              // for (const element of document.getElementsByClassName('page')){
+              //     const pageElement = element as HTMLElement;
+              //     pageElement.style.display = 'none';
+              // }
+              // const workshopElement = document.getElementById('project-page') as HTMLElement;\
+              const document=globalThis.document;
+              console.log(document);
+              // if (workshopElement) {
+              //   workshopElement.style.display = 'flex';
+              // } 
+            }   
         },
         {
             label: 'Import',

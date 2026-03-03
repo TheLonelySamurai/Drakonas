@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import GoToSignUp from './Partials/GoToSignUpButton'
 function Login(){
     async function login(username: string, password: string) {
         const response = await fetch("http://localhost:38451/api/login", {
