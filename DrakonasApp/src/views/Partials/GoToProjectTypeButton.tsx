@@ -9,7 +9,7 @@ function Navigation( {name}:{name:string}){
     }
     const goToProjectType = () => {
         clearPages();
-        const workshopElement = document.getElementById('project-type') as HTMLElement;
+        const workshopElement = document.getElementById('project-type-page') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
         }

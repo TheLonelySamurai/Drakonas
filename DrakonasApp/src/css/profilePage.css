@@ -1,0 +1,67 @@
+
+
+.profile-page{
+  flex-direction:column;
+  align-items:center;
+  justify-content: center;
+}
+.profile-toolbar{
+  width:15%;
+  height:100vh;
+  background-color:gray;
+  display:flex;
+  flex-direction:column;
+  padding:10px;
+  align-items:center;
+}
+.profile-toolbar-button{
+  height:70px;
+  width:70px;
+  justify-content:center;
+  background-color:gray;
+  border:solid gray;
+}
+.profile-toolbar-button :hover{
+  background-color:rgb(92, 92, 92);
+  border:solid rgb(92, 92, 92);
+  border-radius:5px;
+}
+.profile-pic{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content: center;
+    margin:120px 0 10px 0;
+    height:150px;
+    width:150px;
+    border:2px solid black;
+    border-radius:100px;
+    align-self:center;
+}
+.view-half-info-1{
+    display:flex;
+    width:50%;
+    flex-direction:column;
+    justify-content:right;
+}
+.view-half-info-2{
+    display:flex;
+    width:50%;
+    flex-direction:column;
+    justify-self:left;
+    margin-left:10px;
+}
+.view-half-button{
+    margin:20px 0;
+    width:100px;
+    width:50%;
+    justify-self:center;
+}
+.profile-container{
+    width: 50%;
+    height: 50%;
+    display:flex;
+    flex-direction:column;
+    align-items:space-between;
+    justify-content:space-between;
+}

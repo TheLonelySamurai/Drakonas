@@ -1,8 +1,11 @@
 package AuthPackage;
 import org.mindrot.jbcrypt.BCrypt;
 import Database.Database;
+
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Driver;
+import java.sql.*;
 
 import static spark.Spark.*;
 
@@ -50,23 +53,30 @@ public class AuthController {
             }
 
             try (Connection conn = Database.connect();
-                 var stmt = conn.prepareStatement(
-                         "SELECT password FROM users WHERE username == ?")) {
-                stmt.setString(1, username);
-                var rs = stmt.executeQuery();
-                String storedPassword = rs.getString("password");
+                 var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY)) {
+
+                ResultSet rs = stmt.executeQuery("SELECT user_password FROM user WHERE user_username = '" + username + "'");
+
+
                 if (rs.next()){
+                    String storedPassword = rs.getString("password");
                     if (BCrypt.checkpw(password,storedPassword)){
                         return "Successful Login";
                     }
+                    else{
+                        res.status(401);
+                        return "Incorrect Password";
+                    }
                 }
 
+
                 res.status(401);
-                return "Incorrect Credentials";
+                return "Incorrect Username";
 
 
             } catch (Exception e) {
-                e.printStackTrace();
+
+                System.out.println(e.getMessage());
                 res.status(500);
                 return "Registration failed";
             }

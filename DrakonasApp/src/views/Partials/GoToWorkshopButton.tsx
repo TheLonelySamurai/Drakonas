@@ -9,7 +9,7 @@ function Navigation( {name}:{name:string}){
     }
     const goToWorkshop = () => {
         clearPages();
-        const workshopElement = document.querySelector('.workshop') as HTMLElement;
+        const workshopElement = document.getElementById('workshop-page') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
           console.log("Workshop Element Found and Displayed");

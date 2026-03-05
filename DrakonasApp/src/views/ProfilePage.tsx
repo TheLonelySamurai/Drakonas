@@ -1,23 +1,24 @@
 import { useState } from 'react'
+import NavButton from './Partials/NavButton'
+import '../css/profilePage.css';
 function ProfilePage(){
     const [count,setCount] = useState(0)
     return(
-        <div className="profile-page">
-    <div className="page" id="profile">
-        <div className="profile-pic">Profile Picture</div>
-            <div className="profile-row-holder">
-                <div className="view-half-info-1"><span className="info-title">Username:</span>
-                <span className="info-title">Email:</span>
+        <div className="page profile-page" id="profile-page">
+            <NavButton name="Back to Main Page" destId="project-page"/>
+            <div className="profile-container">
+                <div className="profile-pic">Profile Picture</div>
+                <div className="profile-row-holder">
+                    <div className="view-half-info-1"><span className="info-title">Username:</span>
+                    <span className="info-title">Email:</span>
+                    </div>
+                    <div className="view-half-info-2"><span className="info">Username</span>
+                    <span className="info">Email</span>
+                    </div>
                 </div>
-                <div className="view-half-info-2"><span className="info">Username</span>
-                <span className="info">Email</span>
-                </div>
-            </div>
-            <div className="profile-row-holder">
-                <div className="view-half-button"><button>Reset Password</button></div>
-                <div className="view-half-button"><button>Reset Email</button></div>
-            </div>
-    </div>     
+                    <button className="view-half-button">Reset Password</button>
+                    <button className="view-half-button">Reset Email</button>
+            </div>     
         </div>
     )
 }

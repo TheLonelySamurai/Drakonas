@@ -9,7 +9,7 @@ function Navigation( {name}:{name:string}){
     }
     const goToSettings = () => {
         clearPages();
-        const workshopElement = document.getElementById('settings') as HTMLElement;
+        const workshopElement = document.getElementById('settings-page') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
         }

@@ -10,6 +10,8 @@ function DrawingCanvas() {
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
+    const wasByAlt = useRef(false);
+    const toolMode = useRef("Pen");
     const onionSkinEnabled = useRef(false);
     const currentScale = useRef(1);
     const isDrawing = useRef(false);
@@ -229,12 +231,22 @@ function DrawingCanvas() {
             movingCanvas.current = true;
             lastPos.current = getMousePosMoveCanvas(e);
         }
+        if (e.altKey){
+            isDrawing.current = false;
+            isMovingCanvas.current = true;
+            movingCanvas.current = true;
+            wasByAlt.current = true;
+        }
         
     }
 
     function handleMouseUpMoveCanvas() {
         if (movingCanvas.current) {
             movingCanvas.current = false;
+            if(wasByAlt){
+                isMovingCanvas.current = false;
+                wasByAlt.current = false;
+            }
         }
     }
 
@@ -248,17 +260,23 @@ function DrawingCanvas() {
         }
     }
     function handleMouseScrollMoveCanvas(e: React.WheelEvent<HTMLDivElement>) {
+        const delta = e.deltaY;
         if (isMovingCanvas.current) {
-            const delta = e.deltaY;
             scaleCanvas(delta > 0 ? 0.95 : 1.05);
         }
         else{            
-            const deltay = e.deltaY;
-            if (e.shiftKey) {
-                moveCanvas(deltay/10, 0);
-            }else  {
-                moveCanvas(0, -deltay/10);
+         
+            if (e.ctrlKey){
+                //scale
+            scaleCanvas(delta > 0 ? 0.95 : 1.05);
             }
+            else if (e.shiftKey) {
+                moveCanvas(delta/10, 0);
+            }
+            else  {
+                moveCanvas(0, -delta/10);
+            }
+            
         }
     }
     function undo(){
