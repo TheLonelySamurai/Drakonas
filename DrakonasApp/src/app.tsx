@@ -9,13 +9,12 @@ import Workshop from "./views/Workshop"
 import ProjectPage from "./views/ProjectPage"
 import Settings from "./views/Settings"
 import ProfilePage from "./views/ProfilePage"
-
+import Login from './views/Login'
+import SignUp from './views/SignUp'
 createRoot(document.body).render(
   <StrictMode>
-    <ProjectPage/>
-    <Workshop/>
-    <ProfilePage/>
-    <Settings/>
-    <ProjectType/>
+    <Backend/>
+    <Login/>
+    <SignUp/>
   </StrictMode>,
 )
