@@ -1,4 +1,4 @@
-import { shell, app, Menu } from 'electron';
+import { shell, app, Menu, BrowserWindow } from 'electron';
 
 const isMac = process.platform === 'darwin'
 const template = [
@@ -25,17 +25,8 @@ const template = [
     submenu: [
         {
             label: 'Projects',
-            click: async () =>{        
-              // for (const element of document.getElementsByClassName('page')){
-              //     const pageElement = element as HTMLElement;
-              //     pageElement.style.display = 'none';
-              // }
-              // const workshopElement = document.getElementById('project-page') as HTMLElement;\
-              const document=globalThis.document;
-              console.log(document);
-              // if (workshopElement) {
-              //   workshopElement.style.display = 'flex';
-              // } 
+            click:  () =>{    
+              BrowserWindow.getFocusedWindow()?.webContents.send('projects');
             }   
         },
         {
@@ -63,8 +54,20 @@ const template = [
   {
     label: 'Edit',
     submenu: [
-      { role: 'undo' },
-      { role: 'redo' },
+      {
+        label: 'Undo',
+        accelerator: 'CmdOrCtrl+Z',
+        click: () => {
+          BrowserWindow.getFocusedWindow()?.webContents.send('undo');
+        }
+      },
+      {
+        label: 'Redo',
+        accelerator: 'CmdOrCtrl+Shift+Z',
+        click: () => {
+          BrowserWindow.getFocusedWindow()?.webContents.send('redo');
+        }
+      },
       { type: 'separator' },
       { role: 'cut' },
       { role: 'copy' },

@@ -9,7 +9,7 @@ function MainTemplate({Page, startPage, id}:{ Page: React.ComponentType, startPa
             const page=document.getElementById(id) as HTMLElement
             page.style.display="flex"
         }
-    });
+    }, []);
     return(
         <>
         <Page/>
