@@ -1,0 +1,28 @@
+
+.audio-editor-canvas{
+  background-color:white;
+  justify-content:center;
+  margin:20px 0;
+  width:70vw;;
+  height:50vh;
+  align-self:center;
+}
+.audio-actions{
+  display:flex;
+  align-self:center;
+  justify-content:center;
+  width:90%;
+
+}
+.action-button{
+  margin:0 20px;
+  min-height:30px;
+  min-width:30px;
+}
+.timeline{
+  align-self:center;
+  height:30px;
+  width:90%;
+  border:2px solid white;
+  margin:5px 0;
+}

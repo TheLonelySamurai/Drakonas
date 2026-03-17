@@ -9,7 +9,7 @@ function Navigation( {name}:{name:string}){
     }
     const goToProfilePage = () => {
         clearPages();
-        const workshopElement = document.getElementById('profile') as HTMLElement;
+        const workshopElement = document.getElementById('profile-page') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
         }

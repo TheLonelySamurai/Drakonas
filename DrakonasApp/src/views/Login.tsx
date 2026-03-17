@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import GoToSignUp from './Partials/GoToSignUpButton'
+import NavButton from "./Partials/NavButton"
 function Login(){
     async function login(username: string, password: string) {
         const response = await fetch("http://localhost:38451/api/login", {
@@ -22,7 +22,7 @@ function Login(){
     }
     const [count,setCount] = useState(0)
     return(
-    <div className="login-window">
+    <div className="page login-window" id="login-page">
         <div className="heading">Log-in</div>
         <form onSubmit={async (e) => {
             e.preventDefault();
@@ -40,7 +40,7 @@ function Login(){
             <input type="text" className="word-input" name="username"/>
             <label htmlFor="password" className="input-holder">Password</label>
             <input type="password" className="word-input" name="password"/>
-            <button className="credentials-button">Sign Up</button>
+            <NavButton name="Sign Up" destId="signup-page" id="login-to-signup-button"/>
             <button type="submit" className="credentials-button">Submit</button>
         </form>
     </div>

@@ -9,7 +9,7 @@ import DrawingCanvas from './drawingCanvas';
 function Workshop(){
     const [count,setCount] = useState(0)
     return(
-        <div className="workshop" style={{display: 'none'}}>
+        <div className="page workshop" id="workshop-page">
             <div className="toolbar">
                 <button>Pen</button>
                 <button>Eraser</button>

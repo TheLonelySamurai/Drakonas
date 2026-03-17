@@ -1,6 +1,8 @@
 package AuthPackage;
 import org.mindrot.jbcrypt.BCrypt;
 import Database.Database;
+
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.*;
@@ -69,6 +71,7 @@ public class AuthController {
                         return "Incorrect Password";
                     }
                 }
+
 
                 res.status(401);
                 return "Incorrect Username";

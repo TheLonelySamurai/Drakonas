@@ -11,9 +11,9 @@ const { contextBridge } = require('electron')
 //   electron: () => process.versions.electron
 //   // we can also expose variables, not just functions
 // })
-// contextBridge.exposeInMainWorld('custom',{
-//     ping: () => ipcRenderer.invoke("ping")
-// })
+contextBridge.exposeInMainWorld('menuNav',{
+  onReturnHome: (callback: () => void) => ipcRenderer.on("projects", callback)
+});
 contextBridge.exposeInMainWorld("historyAPI", {
   onUndo: (callback: () => void) => ipcRenderer.on("undo", callback),
   onRedo: (callback: () => void) => ipcRenderer.on("redo", callback),

@@ -9,7 +9,7 @@ function Navigation( {name}:{name:string}){
     }
     const goToSignUp = () => {
         clearPages();
-        const workshopElement = document.querySelector('.signup') as HTMLElement;
+        const workshopElement = document.getElementById('signup-page') as HTMLElement;
         if (workshopElement) {
           workshopElement.style.display = 'flex';
         }

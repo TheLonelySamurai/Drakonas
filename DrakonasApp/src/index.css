@@ -1,15 +1,28 @@
+
+
+    :root {
+      --bg-dark: #36373a;
+      --bg-card: #25271f;
+      --bg-hover: #2f572b;
+      --text-light: #dfe2e9ff;
+      --text-muted: #94a3b8;
+      --accent: #25eb88;
+      --border: rgba(255,255,255,0.08);
+      --red: #ef4444;
+    }
+  
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
   margin: auto;
-  color:white;
+  color:var(--text-light);
 }
 .page{
   display: none;
 }
 body{
-    background-color:rgb(81, 81, 81);
+    background-color:var(--bg-dark);
 }
 .login-window{
   
@@ -62,67 +75,6 @@ body{
   border:2px solid rgb(109, 109, 109);
   background-color:rgb(120, 120, 120);
 }
-.profile-toolbar{
-  width:15%;
-  height:100vh;
-  background-color:gray;
-  display:flex;
-  flex-direction:column;
-  padding:10px;
-  align-items:center;
-}
-.profile-toolbar-button{
-  height:70px;
-  width:70px;
-  justify-content:center;
-  background-color:gray;
-  border:solid gray;
-}
-.profile-toolbar-button :hover{
-  background-color:rgb(92, 92, 92);
-  border:solid rgb(92, 92, 92);
-  border-radius:5px;
-}
-.audio-editor-canvas{
-  background-color:white;
-  justify-content:center;
-  margin:20px 0;
-  width:70vw;;
-  height:50vh;
-  align-self:center;
-}
-.audio-actions{
-  display:flex;
-  align-self:center;
-  justify-content:center;
-  width:90%;
-
-}
-.action-button{
-  margin:0 20px;
-  min-height:30px;
-  min-width:30px;
-}
-.timeline{
-  align-self:center;
-  height:30px;
-  width:90%;
-  border:2px solid white;
-  margin:5px 0;
-}
-.profile-page{
-  display:flex;
-  flex-direction:column;
-  width:30vw;
-}
-.profile-pic{
-  margin:120px 0 10px 0;
-  height:150px;
-  width:150px;
-  border:2px solid black;
-  border-radius:100px;
-  align-self:center;
-}
 .info-title{
   color:gold;
   font-size:x-large;
@@ -130,24 +82,6 @@ body{
 }
 .info{
   font-size:x-large
-}
-.view-half-info-1{
-display:flex;
-width:50%;
-flex-direction:column;
-justify-content:right;
-}
-.view-half-info-2{
-  display:flex;
-  width:50%;
-  flex-direction:column;
-  justify-content:left;
-  margin-left:10px;
-}
-.view-half-button{
-  display:flex;
-  width:50%;
-  justify-content:center;
 }
 .center{
   display:flex;
@@ -158,24 +92,6 @@ justify-content:right;
 display:flex;
 width:100%;
 margin-top:20px;
-}
-.settings-left{
-  display:flex;
-  width:50%;
-  flex-direction:column;
-  text-align:right;
-  border-right:2px solid black;
-  padding-right:10px;
-}
-.settings-right{
-  display:flex;
-  width:50%;
-  flex-direction:column;
-  justify-content:left;
-  margin-left:10px;
-}
-.setting-card{
-  font-size:x-large;
 }
 .project-button{
   margin:20px 0;
