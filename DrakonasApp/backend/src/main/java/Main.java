@@ -23,6 +23,9 @@ public class Main {
             res.type("application/json");
             return new Gson().toJson("Backend Connected");
         });
+        get ("/api/getUser", (req, res ) ->{
+            return req.session().attribute("user");
+        });
         get("/api/dbtest", (req, res) -> {
 
             try (Connection conn = Database.connect();

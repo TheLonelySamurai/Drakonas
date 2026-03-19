@@ -1,8 +1,11 @@
-import { useState } from 'react'
+import { useState,useEffect } from 'react'
 import NavButton from './Partials/NavButton'
 import '../css/profilePage.css';
 function ProfilePage(){
-    const [count,setCount] = useState(0)
+    const [user,setUser] = useState(0)
+    useEffect(()=>{
+        var user=fetch('api/getUser');
+    }, [user]);
     return(
         <div className="page profile-page" id="profile-page">
             <NavButton name="Back to Main Page" destId="project-page"/>
@@ -12,7 +15,7 @@ function ProfilePage(){
                     <div className="view-half-info-1"><span className="info-title">Username:</span>
                     <span className="info-title">Email:</span>
                     </div>
-                    <div className="view-half-info-2"><span className="info">Username</span>
+                    <div className="view-half-info-2"><span className="info">{user}</span>
                     <span className="info">Email</span>
                     </div>
                 </div>
