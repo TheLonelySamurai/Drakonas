@@ -1,8 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import NavButton from './Partials/NavButton'
 import '../css/profilePage.css';
+import { session } from 'electron';
 function ProfilePage(){
     const [count,setCount] = useState(0)
+    
+    useEffect(()=>{
+        var user = sessionStorage.getItem("user");
+        console.log("USER: " + user);
+    }, []); 
     return(
         <div className="page profile-page" id="profile-page">
             <NavButton name="Back to Main Page" destId="project-page"/>
