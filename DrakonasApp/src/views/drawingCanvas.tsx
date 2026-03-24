@@ -6,6 +6,7 @@ import '../css/drawingCanvas.css';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
+import Shape from "../classes/ShapeTool";
 function DrawingCanvas() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
@@ -28,6 +29,7 @@ function DrawingCanvas() {
     const tools = new Map<String, Tool>();
     tools.set("pen", new Pen());
     tools.set("line", new Line());
+    tools.set("shape",new Shape());
     const frames = useRef<Path2D[][]>([]); // Array of frames, each frame is an array of paths
     const currentFrameIndex = useRef(0);
     
@@ -505,7 +507,15 @@ function DrawingCanvas() {
             }}>
                Line Tool 
             </button>
-
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+            }}>
+               Shape Tool 
+            </button>
         </div>
         <div className="dc-hor-container" ref ={animationHandler}>
         <button onClick={() => {
