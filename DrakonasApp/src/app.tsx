@@ -16,8 +16,10 @@ import SignUp from './views/SignUp'
 createRoot(document.body).render(
   <StrictMode>
     <Backend/>
+    <PageTemplate Page={SignUp} id="signup-page" />
+    <PageTemplate Page={Login} id="login-page"/>
     <PageTemplate Page={ProjectPage} id="project-page" />
-    <PageTemplate Page={Workshop} id="workshop-page" startPage={true}/>
+    <PageTemplate Page={Workshop} id="workshop-page"startPage={true}/>
     <PageTemplate Page={ProfilePage} id="profile-page" />
     <PageTemplate Page={Settings} id="settings-page"    />
     <PageTemplate Page={ProjectType} id="project-type-page" />

@@ -13,6 +13,7 @@ declare global {
         menuNav: {
             onReturnHome: (callback: () => void) => void;
         };
+      
     }
 }
 
@@ -37,12 +38,15 @@ function ProjectPage(){
         }
     
     }
+    const login = () =>{
+    }
     return(
         <div className="page" id="project-page">
             <div className="profile-toolbar">
             <NavButton name="Profile Page" destId="profile-page" conditional="login-page"/>
             <NavButton name="Settings" destId="settings-page"/>
             <NavButton name="Create New Project" destId="project-type-page"/>
+            <button onClick={login}>CLICK ME</button>
         </div>
         </div>
         

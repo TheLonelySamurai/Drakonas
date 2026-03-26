@@ -3,30 +3,48 @@ import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
 
 import '../css/drawingCanvas.css';
+import Tool from "../classes/Tool";
+import Pen from "../classes/PenTool";
+import Line from "../classes/LineTool";
+import Shape from "../classes/ShapeTool";
+import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
+    //Canvases
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
-    const wasByAlt = useRef(false);
-    const toolMode = useRef("Pen");
+    const toolsHandler = useRef<HTMLDivElement | null>(null);
+    //Color inputs
+    const inputPrimary = useRef<HTMLInputElement | null>(null);
+    const inputSecondary = useRef<HTMLInputElement | null>(null);
+    //Tool initialization
+    const toolMode = useRef("pen");
+    const tools = new Map<String, Tool>();
+    tools.set("pen", new Pen());
+    tools.set("line", new Line());
+    tools.set("shape",new Shape());
+    //Deprecated 
+    const temporaryPoints = useRef([]);
+    const isDrawing = useRef(false);
+    //Canvas Variables
     const onionSkinEnabled = useRef(false);
     const currentScale = useRef(1);
-    const isDrawing = useRef(false);
     const isMovingCanvas = useRef(false);
     const movingCanvas = useRef(false);
+    const wasByAlt = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
-    const paths = useRef<Path2D[]>([]);
-    const undonePaths = useRef<Path2D[]>([]);
-    var p = useRef<Path2D | null>(null);
-
-    const frames = useRef<Path2D[][]>([]); // Array of frames, each frame is an array of paths
+    //Undo Redo and Frames
+    const paths = useRef<Map<StrokeSettings,Path2D>[]>([]);
+    const undonePaths = useRef<Map<StrokeSettings,Path2D>[]>([]);
+    const frames = useRef<Map<StrokeSettings, Path2D>[][]>([]); // Array of frames, each frame is an array of paths
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
-        // Runs AFTER render
+        // Runs AFTER render, the initialization of the elements to their functionality
         const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
         if (framesHolder) {
             framesHolder.appendChild(framesHandler.current);
@@ -39,70 +57,168 @@ function DrawingCanvas() {
         if (historyHolder) {
             historyHolder.appendChild(historyHandler.current);
         }
+        const toolsHolder = document.querySelector('.tools-holder') as HTMLElement;
+        if (toolsHolder){
+            toolsHolder.appendChild(toolsHandler.current);
+        }
         const canvas = canvasRef.current;
+        Tool.canvas = canvas;
+        Tool.scale = currentScale.current;
+        Tool.colorPrimary = inputPrimary.current.value;
+        Tool.colorSecondary = inputSecondary.current.value;
+        
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         clearCanvas();
         clearOnionSkin();
-        
-        window.historyAPI.onUndo(() => undo());
-        window.historyAPI.onRedo(() => redo());
+        saveFrame();
+        const removeUndo = window.historyAPI.onUndo(() => undo());
+        const removeRedo = window.historyAPI.onRedo(() => redo());
+
+        return () => {
+            removeUndo();
+            removeRedo();
+        };
     }, []);
+    //Frame Related
+        function saveFrame() {
+            // Save the current paths into the current frame
 
-    function saveFrame() {
-        // Save the current paths into the current frame
-        frames.current[currentFrameIndex.current] = [...paths.current];
-        // Update the preview for this frame
-        addPreviewFrameToFramesHandler(currentFrameIndex.current);
+            // Update the preview for this frame
+            addPreviewFrameToFramesHandler(currentFrameIndex.current);
 
-    }
-    
-    function newFrame() {
-        saveFrame(); // Save the current frame before creating a new one
-        currentFrameIndex.current = frames.current.length ; // Move to the new frame
-        clearCanvas();
-        if (onionSkinEnabled.current){
-            clearOnionSkin();
-            loadOnionSkin(currentFrameIndex.current - 1);
+        }
+        
+        function newFrame() {
+            saveFrame(); // Save the current frame before creating a new one
+            currentFrameIndex.current = frames.current.length ; // Move to the new frame
+            clearCanvas();
+            if (onionSkinEnabled.current){
+                clearOnionSkin();
+                loadOnionSkin(currentFrameIndex.current - 1);
+            }
+
+            paths.current = []; // Clear current paths for the new frame
         }
 
-        paths.current = []; // Clear current paths for the new frame
-        p.current = null; // Reset current path
-    }
+        function loadFrame(index: number) {
+            if (index < 0 || index >= frames.current.length) return;
+            currentFrameIndex.current = index;
 
-    function loadFrame(index: number) {
-        if (index < 0 || index >= frames.current.length) return;
-        paths.current = [...frames.current[index]];
-        currentFrameIndex.current = index;
-        redrawCanvas();
-        if(onionSkinEnabled.current){
-            clearOnionSkin();
-            loadOnionSkin(index - 1);
+            redrawCanvas();
+            if(onionSkinEnabled.current){
+                clearOnionSkin();
+                loadOnionSkin(index - 1);
+            }
         }
-    }
+        function removeFrame(frameIndex: number){
+            
+            if (frameIndex < 0 || frameIndex >= frames.current.length) return;
+            frames.current.splice(frameIndex, 1);
+            // If the removed frame is before the current frame, adjust the current frame index
+            if (currentFrameIndex.current > frameIndex) {
+                currentFrameIndex.current--;
+            }
+            loadFrame(currentFrameIndex.current); // Reload the current frame to update the canvas
+            // Update the preview for all frames after the removed frame
+            clearPreviewFrames();
+            for (let i = frameIndex; i < frames.current.length; i++) {
+                addPreviewFrameToFramesHandler(i);
+            }
+        }
 
-    function loadOnionSkin(index: number) {
-        onionSkinEnabled.current = true;
-        if (index < 0 || index >= frames.current.length) return;
-        const canvas = canvasOnionRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.globalAlpha = 0.5; // Set transparency for onion skin effect
-        frames.current[index].forEach(path => {
-            ctx.stroke(path);
-        });
-        ctx.globalAlpha = 1.0; // Reset transparency
-    }
+        function clearPreviewFrames() {
+            const framesHolder = framesHandler.current;
+            if (!framesHolder) return;
+            framesHolder.innerHTML = '';  
+        }
+        function removePreviewFrame(frameIndex: number){
+            const framesHolder = framesHandler.current;
+            if (!framesHolder) return;
+            const previewCanvases = framesHolder.querySelectorAll('.frame');
+            if (frameIndex < 0 || frameIndex >= previewCanvases.length) return;
+            previewCanvases.forEach((canvas) => {
+                if (canvas.id === `frame-${frameIndex}`) {
+                    framesHolder.removeChild(canvas);
+                }
+            });
 
-    function clearOnionSkin() {
-        const canvas = canvasOnionRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        onionSkinEnabled.current = false;
-    }
+        }
+        function addPreviewFrameToFramesHandler(frameIndex: number) {
+            const framePreviewContainer = document.createElement('div');
+            const frameLabel = document.createElement('div');
+            frameLabel.textContent = `Frame ${frameIndex + 1}`;
+            frameLabel.style.textAlign = 'center';
+            frameLabel.style.fontSize = '12px';
+            frameLabel.style.marginBottom = '4px';
+            framePreviewContainer.appendChild(frameLabel);
+            const frameDeleteButton = document.createElement('button');
+            frameDeleteButton.textContent = 'X';
+            frameDeleteButton.style.position = 'absolute';
+            frameDeleteButton.style.top = '0';
+            frameDeleteButton.style.right = '0';
+            frameDeleteButton.style.background = 'red';
+            frameDeleteButton.style.color = 'white';
+            frameDeleteButton.style.border = 'none';
+            frameDeleteButton.addEventListener('click', () => {
+                removeFrame(frameIndex);
+            });
+            framePreviewContainer.appendChild(frameDeleteButton);
+            const frameCanvasButton = document.createElement('button');
+            const frameCanvas = document.createElement('canvas');
+            frameCanvas.width = 800;
+            frameCanvas.height = 600;
+            const ctx = frameCanvas.getContext('2d');
+            if (!ctx) return;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'black';
+            ctx.lineCap = 'round';
+            //resize the preview canvas to be smaller
+            frameCanvas.style.width = '160px';
+            frameCanvas.style.height = '120px';
+            frameCanvasButton.appendChild(frameCanvas);
+            frameCanvasButton.addEventListener('click', () => {
+                loadFrame(frameIndex);
+            });
+            framePreviewContainer.style.position = 'relative';
+            framePreviewContainer.appendChild(frameCanvasButton);
+            framePreviewContainer.id = `frame-${frameIndex}`;
+            framePreviewContainer.className = 'frame';
+            //If the frame already has a preview, remove it before adding the new one
+            removePreviewFrame(frameIndex);
+            //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
+            const framesHolder = framesHandler.current;
+            if (!framesHolder) return;
+            const previewCanvases = framesHolder.querySelectorAll('.frame');
+            if (frameIndex >= previewCanvases.length) {
+                framesHolder.appendChild(framePreviewContainer);
+            } else {
+                framesHolder.insertBefore(framePreviewContainer, previewCanvases[frameIndex]);
+            }
+        }
+    //Onion Related
+        function loadOnionSkin(index: number) {
+            onionSkinEnabled.current = true;
+            if (index < 0 || index >= frames.current.length) return;
+            const canvas = canvasOnionRef.current;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.globalAlpha = 0.5; // Set transparency for onion skin effect
+            
+            ctx.globalAlpha = 1.0; // Reset transparency
+        }
+
+        function clearOnionSkin() {
+            const canvas = canvasOnionRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            onionSkinEnabled.current = false;
+        }
 
     function clearCanvas() {
         const canvas = canvasRef.current;
@@ -116,14 +232,24 @@ function DrawingCanvas() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         clearCanvas();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'black';
-        ctx.lineCap = 'round';
-        paths.current.forEach(path => {
-            ctx.stroke(path);
-        });
+        // console.log("PATHS + " +paths.current);
+        for(let i = 0; i < paths.current.length; i ++){
+            let map = paths.current[i];
+            // console.log(map);
+            map.forEach(function (value, key){
+                // console.log("KEY: " + key + " | VALUE: " + value)
+                if (value == null)return;
+                // console.log(key);
+                // console.log(value)
+                ctx.fillStyle = key.fillStyle;
+                ctx.strokeStyle = key.strokeStyle;
+                ctx.lineWidth = key.lineWidth;
+                ctx.lineCap  = key.lineCap;
+                ctx.stroke(value);
+            });
+        }
     }
-
+/*
     // function exportToGif(){
     //     console.log("Exporting to GIF with frames: ", frames.current.length);
     //     console.log("Frames data: ", frames.current);
@@ -161,6 +287,10 @@ function DrawingCanvas() {
     //     });
     //     gif.render();
     // }
+*/
+    
+    
+    //Mouse functions
     function getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
         
@@ -172,51 +302,73 @@ function DrawingCanvas() {
 
     function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
         if (isMovingCanvas.current) return; // Don't start drawing if we're moving the canvas
-        // Reset the undone paths when starting a new path
-        undonePaths.current = [];
-        isDrawing.current = true;
-        lastPos.current = getMousePos(e);
-        p.current = new Path2D();
+        // if (toolMode.current == "pen"){
+        //     // Reset the undone paths when starting a new path
+        //     undonePaths.current = [];
+        //     isDrawing.current = true;
+        //     lastPos.current = getMousePos(e);
+        //     p.current = new Path2D();
+        // }
+        // if(toolMode.current == "line"){
+        //     lastPos.current = getMousePos(e);
+        //     startFinishLine(lastPos.current);
+        // }
+        Tool.canvas = canvasRef.current;
+        Tool.scale = currentScale.current;
+        const tool = tools.get(toolMode.current);
+        tool.down(e);
+        
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
+        }
         
     }
 
     function handleMouseUp() {
         if(isMovingCanvas.current) return; // Don't stop drawing if we're moving the canvas
-        isDrawing.current = false;
-        //Need to save the current path now!
-        if (p.current){
-            paths.current.push(p.current);
-            
+        // if(toolMode.current == "line"){
+        //     console.log("lastpos: ", lastPos.current)
+        //     startFinishLine(lastPos.current);
+        // }
+        // //Need to save the current path now!
+        // if (p.current){
+        //     paths.current.push(p.current);   
+        // }
+        // p.current = null;
+        // if (toolMode.current == 'pen'){
+        //     isDrawing.current = false;
+        // }
+        
+        const tool = tools.get(toolMode.current);
+        tool.up();
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
         }
-        p.current = null;
-        saveFrame(); // Save the frame after finishing a path
     }
 
     function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
         if(isMovingCanvas.current) return; // Don't draw if we're moving the canvas
-        if (!isDrawing.current) return;
-
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const pos = getMousePos(e);
-        if (!p.current) {
-            p.current = new Path2D();
-            p.current.moveTo(pos.x, pos.y);
+        Tool.canvas = canvasRef.current;
+        Tool.scale = currentScale.current;
+        const tool = tools.get(toolMode.current);
+        tool.move(e);
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
         }
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'black';
-        ctx.lineCap = 'round';
-        p.current.moveTo(lastPos.current.x, lastPos.current.y);
-        p.current.lineTo(pos.x, pos.y);
-        ctx.stroke(p.current);
-
-        lastPos.current = pos;
     }
-    
+    //Mouse moving canvas functions
     function getMousePosMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
         return {
@@ -279,21 +431,6 @@ function DrawingCanvas() {
             
         }
     }
-    function undo(){
-        const lastPath = paths.current.pop();
-        if (lastPath) {
-            undonePaths.current.push(lastPath);
-            redrawCanvas();
-        }
-    }
-    function redo(){
-            const lastUndonePath = undonePaths.current.pop();
-            if (lastUndonePath) {
-                paths.current.push(lastUndonePath);
-                redrawCanvas();
-            }
-    }
-    
     function moveCanvas(dx: number, dy: number) {
         const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
         const currentTransform = canvasContainer.style.transform || 'translate(0px, 0px)';
@@ -305,6 +442,8 @@ function DrawingCanvas() {
             currentY = parseInt(match[2]);
         }
         canvasContainer.style.transform = `translate(${currentX + dx}px, ${currentY + dy}px)`;
+        
+        Tool.scale = currentScale.current;
     }
     function scaleCanvas(scaleFactor: number) {
         const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
@@ -318,7 +457,26 @@ function DrawingCanvas() {
             const offsetY = (centerY - window.innerHeight / 2) * (scaleFactor - 1);
             canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentScale.current})`;
         });
+        Tool.scale = currentScale.current;
     }
+    //undo redo
+    function undo(){
+        const lastPath = paths.current.pop();
+        if (lastPath) {
+            undonePaths.current.push(lastPath);
+            redrawCanvas();
+        }
+        console.log("UNDO")
+    }
+    function redo(){
+        const lastUndonePath = undonePaths.current.pop();
+        if (lastUndonePath) {
+            paths.current.push(lastUndonePath);
+            redrawCanvas();
+        }
+        console.log("REDO")
+    }
+    
     function moveCanvasButton(){
         if (isMovingCanvas.current) {
             isMovingCanvas.current = false;
@@ -328,97 +486,7 @@ function DrawingCanvas() {
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
-
-    function removeFrame(frameIndex: number){
-        
-        if (frameIndex < 0 || frameIndex >= frames.current.length) return;
-        frames.current.splice(frameIndex, 1);
-        // If the removed frame is before the current frame, adjust the current frame index
-        if (currentFrameIndex.current > frameIndex) {
-            currentFrameIndex.current--;
-        }
-        loadFrame(currentFrameIndex.current); // Reload the current frame to update the canvas
-        // Update the preview for all frames after the removed frame
-        clearPreviewFrames();
-        for (let i = frameIndex; i < frames.current.length; i++) {
-            addPreviewFrameToFramesHandler(i);
-        }
-    }
-
-    function clearPreviewFrames() {
-        const framesHolder = framesHandler.current;
-        if (!framesHolder) return;
-        framesHolder.innerHTML = '';  
-    }
-    function removePreviewFrame(frameIndex: number){
-        const framesHolder = framesHandler.current;
-        if (!framesHolder) return;
-        const previewCanvases = framesHolder.querySelectorAll('.frame');
-        if (frameIndex < 0 || frameIndex >= previewCanvases.length) return;
-        previewCanvases.forEach((canvas) => {
-            if (canvas.id === `frame-${frameIndex}`) {
-                framesHolder.removeChild(canvas);
-            }
-        });
-
-    }
-    function addPreviewFrameToFramesHandler(frameIndex: number) {
-        const framePreviewContainer = document.createElement('div');
-        const frameLabel = document.createElement('div');
-        frameLabel.textContent = `Frame ${frameIndex + 1}`;
-        frameLabel.style.textAlign = 'center';
-        frameLabel.style.fontSize = '12px';
-        frameLabel.style.marginBottom = '4px';
-        framePreviewContainer.appendChild(frameLabel);
-        const frameDeleteButton = document.createElement('button');
-        frameDeleteButton.textContent = 'X';
-        frameDeleteButton.style.position = 'absolute';
-        frameDeleteButton.style.top = '0';
-        frameDeleteButton.style.right = '0';
-        frameDeleteButton.style.background = 'red';
-        frameDeleteButton.style.color = 'white';
-        frameDeleteButton.style.border = 'none';
-        frameDeleteButton.addEventListener('click', () => {
-            removeFrame(frameIndex);
-        });
-        framePreviewContainer.appendChild(frameDeleteButton);
-        const frameCanvasButton = document.createElement('button');
-        const frameCanvas = document.createElement('canvas');
-        frameCanvas.width = 800;
-        frameCanvas.height = 600;
-        const ctx = frameCanvas.getContext('2d');
-        if (!ctx) return;
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = 'black';
-        ctx.lineCap = 'round';
-        frames.current[frameIndex].forEach(path => {
-            ctx.stroke(path);
-        });
-        //resize the preview canvas to be smaller
-        frameCanvas.style.width = '160px';
-        frameCanvas.style.height = '120px';
-        frameCanvasButton.appendChild(frameCanvas);
-        frameCanvasButton.addEventListener('click', () => {
-            loadFrame(frameIndex);
-        });
-        framePreviewContainer.style.position = 'relative';
-        framePreviewContainer.appendChild(frameCanvasButton);
-        framePreviewContainer.id = `frame-${frameIndex}`;
-        framePreviewContainer.className = 'frame';
-        //If the frame already has a preview, remove it before adding the new one
-        removePreviewFrame(frameIndex);
-        //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
-        const framesHolder = framesHandler.current;
-        if (!framesHolder) return;
-        const previewCanvases = framesHolder.querySelectorAll('.frame');
-        if (frameIndex >= previewCanvases.length) {
-            framesHolder.appendChild(framePreviewContainer);
-        } else {
-            framesHolder.insertBefore(framePreviewContainer, previewCanvases[frameIndex]);
-        }
-    }
+    //Color Change Tools
 
     return (
     <div className="drawingCanvasContainer">
@@ -479,6 +547,24 @@ function DrawingCanvas() {
                     <li key={index}>Path {index + 1}</li>
                 ))}
             </ul>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "line"
+            }}>
+               Line Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+            }}>
+               Shape Tool 
+            </button>
         </div>
         <div className="dc-hor-container" ref ={animationHandler}>
         <button onClick={() => {
@@ -569,6 +655,64 @@ function DrawingCanvas() {
         </button>
         </div>
         <div className='dc-vert-container' ref={framesHandler}></div>
+        <div className='dc-vert-container' ref={toolsHandler}>
+            <div className="colorSelector">
+                <p>Choose your colors:</p>
+                <div>
+                    <input
+                    ref={inputPrimary}
+                    type="color"
+                    id="primary-color"
+                    name="primary-color"
+                    defaultValue="#e66465"
+                    onChange={()=>{
+                        Tool.colorPrimary = inputPrimary.current.value;
+                    }}
+                    />
+                    <label htmlFor="primary-color">Primary Color</label>
+                </div>
+                <div>
+                    <input
+                    ref={inputSecondary}
+                    type="color"
+                    id="secondary-color"
+                    name="secondary-color"
+                    defaultValue="oklab(50% 0.1 0.1 / 0.5)"
+                    onChange={()=>{
+                        Tool.colorSecondary = inputSecondary.current.value;
+                    }}
+                    />
+                    <label htmlFor="secondary-color">Secondary Color</label>
+                </div>
+            </div>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "pen"
+            }}>
+               Pen Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "line"
+            }}>
+               Line Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+            }}>
+               Shape Tool 
+            </button>
+        </div>
     </div>
     );
 }
