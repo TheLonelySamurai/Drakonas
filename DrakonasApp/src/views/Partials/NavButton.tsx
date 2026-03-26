@@ -9,7 +9,14 @@ function Navigation( {name, destId, id, conditional}:{name:string, destId:string
     }
     async function retrieveUser():Promise<string>{
         try {
-        const res = await fetch("http://localhost:38451/api/retrieve-user");
+        const sessionId = localStorage.getItem('my_session_id');
+        const res = await fetch("http://localhost:38451/api/retrieve-user",{
+            method: 'GET',
+            credentials: 'include' ,// This tells Electron to send the JSESSIONID cookie
+            headers: {
+                'X-Session-ID': sessionId || '' // Send the ID manually
+            }
+            });
         const text = await res.text();
         console.log(text);
         return text;
@@ -20,13 +27,9 @@ function Navigation( {name, destId, id, conditional}:{name:string, destId:string
     async function goToPage() {
         clearPages();
         var el = document.getElementById(destId) as HTMLElement;
-        console.log("GO TO")
         if (conditional != null){ 
-            console.log("CONDITIONAL")
             var user = await retrieveUser();
-            console.log(user)
             if (user == "null"){
-                console.log("null?")
                 el = document.getElementById(conditional) as HTMLElement;
             }
             

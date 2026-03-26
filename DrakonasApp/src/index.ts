@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, screen, session } from 'electron';
 import menu  from './menu';
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
@@ -61,9 +61,11 @@ const createWindow = (): BrowserWindow => {
     width: width,
     webPreferences: {
       preload: MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY,
+      webSecurity:true
     },
     show: false
   });
+
   mainWindow.maximize();
   mainWindow.show();
 
@@ -82,6 +84,15 @@ function goToProjects(){
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
   var win = createWindow()
+
+  // This ensures Electron doesn't strip the cookie when moving between ports
+  win.webContents.session.webRequest.onBeforeSendHeaders(
+    { urls: ['http://localhost:38451/*'] },
+    (details, callback) => {
+      details.requestHeaders['Origin'] = 'http://localhost:3000';
+      callback({ requestHeaders: details.requestHeaders });
+    }
+  );
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {

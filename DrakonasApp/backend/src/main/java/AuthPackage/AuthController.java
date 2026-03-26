@@ -1,4 +1,5 @@
 package AuthPackage;
+import com.google.gson.Gson;
 import org.mindrot.jbcrypt.BCrypt;
 import Database.Database;
 
@@ -6,7 +7,10 @@ import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 
+import static org.example.Main.manualSessions;
 import static spark.Spark.*;
 
 public class AuthController {
@@ -59,14 +63,26 @@ public class AuthController {
             try (Connection conn = Database.connect();
                  var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY)) {
 
-                ResultSet rs = stmt.executeQuery("SELECT user_password FROM users WHERE user_username = '" + username + "'");
+                ResultSet rs = stmt.executeQuery("SELECT user_password, user_id, user_email FROM users WHERE user_username = '" + username + "'");
 
                 if (rs.next()){
                     String storedPassword=rs.getString("user_password");
                     if (BCrypt.checkpw(password,storedPassword)){
                         req.session(true);
-                        req.session().attribute("user", username);
-                        return "Successful Login";
+
+                        Map<String, Object> userSession = new HashMap<>();
+                        userSession.put("userId", rs.getString("user_id"));
+                        userSession.put("username", username);
+                        userSession.put("email", rs.getString("user_email"));
+                        req.session().attribute("user", userSession);
+                        // Create a response that includes the ID
+                        Map<String, Object> response = new HashMap<>(userSession);
+                        response.put("sessionId", req.session().id()); // Send ID to Electron
+                        manualSessions.put(req.session().id(), userSession);
+                        res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
+                        System.out.println((req.session().attribute("user")).toString());
+                        res.type("application/json");
+                        return new Gson().toJson(response);
                     }
                     else{
                         res.status(401);

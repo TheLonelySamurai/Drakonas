@@ -30,8 +30,10 @@ function Login(){
             const username = formData.get("username") as string;
             const password = formData.get("password") as string;
             try {
-                const result = await login(username, password);
-                console.log("Login successful:", result);
+                var result = await login(username, password);
+                console.log("Login successful!");
+                var res = JSON.parse(result);
+                localStorage.setItem('my_session_id', res.sessionId);
             } catch (error) {
                 console.error("Login failed:", error);
             }
