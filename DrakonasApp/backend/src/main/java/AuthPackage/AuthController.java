@@ -64,6 +64,8 @@ public class AuthController {
                 if (rs.next()){
                     String storedPassword=rs.getString("user_password");
                     if (BCrypt.checkpw(password,storedPassword)){
+                        req.session(true);
+                        req.session().attribute("user", username);
                         return "Successful Login";
                     }
                     else{

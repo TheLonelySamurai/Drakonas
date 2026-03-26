@@ -2,6 +2,7 @@ import static spark.Spark.*;
 
 import AuthPackage.AuthController;
 import Database.Database;
+import UserPackage.UserController;
 import com.google.gson.Gson;
 
 import java.sql.Connection;
@@ -41,6 +42,7 @@ public class Main {
             return "No result";
         });
         AuthController.register();
+        UserController.retrieve();
     }
 
 }

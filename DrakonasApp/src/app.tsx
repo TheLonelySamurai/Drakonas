@@ -21,5 +21,7 @@ createRoot(document.body).render(
     <PageTemplate Page={ProfilePage} id="profile-page" />
     <PageTemplate Page={Settings} id="settings-page"    />
     <PageTemplate Page={ProjectType} id="project-type-page" />
+    <PageTemplate Page={Login} id="login-page"/>
+    <PageTemplate Page={SignUp} id="signup-page"/>
   </StrictMode>,
 )

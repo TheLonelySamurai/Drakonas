@@ -3,9 +3,20 @@ import NavButton from './Partials/NavButton'
 import '../css/profilePage.css';
 function ProfilePage(){
     const [count,setCount] = useState(0)
+    async function retrieveUser(id : string){
+        try {
+        const res = await fetch("http://localhost:38451/api/retrieve-user");
+        const text = await res.text();
+        console.log(text);
+        document.getElementById(id).innerHTML = text;
+      } catch (err) {
+        console.error("Backend not reachable:", err);
+      }
+    }
     return(
         <div className="page profile-page" id="profile-page">
             <NavButton name="Back to Main Page" destId="project-page"/>
+            <button onClick={()=>{retrieveUser("viewButton")}} id="viewButton">TEXT</button>
             <div className="profile-container">
                 <div className="profile-pic">Profile Picture</div>
                 <div className="profile-row-holder">

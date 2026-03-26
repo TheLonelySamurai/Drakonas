@@ -40,7 +40,7 @@ function ProjectPage(){
     return(
         <div className="page" id="project-page">
             <div className="profile-toolbar">
-            <NavButton name="Profile Page" destId="profile-page"/>
+            <NavButton name="Profile Page" destId="profile-page" conditional="login-page"/>
             <NavButton name="Settings" destId="settings-page"/>
             <NavButton name="Create New Project" destId="project-type-page"/>
         </div>
