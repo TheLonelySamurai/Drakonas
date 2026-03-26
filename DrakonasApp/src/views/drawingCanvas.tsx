@@ -6,6 +6,7 @@ import '../css/drawingCanvas.css';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
+import Shape from "../classes/ShapeTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
@@ -25,6 +26,7 @@ function DrawingCanvas() {
     const tools = new Map<String, Tool>();
     tools.set("pen", new Pen());
     tools.set("line", new Line());
+    tools.set("shape",new Shape());
     //Deprecated 
     const temporaryPoints = useRef([]);
     const isDrawing = useRef(false);
@@ -545,7 +547,24 @@ function DrawingCanvas() {
                     <li key={index}>Path {index + 1}</li>
                 ))}
             </ul>
-
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "line"
+            }}>
+               Line Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+            }}>
+               Shape Tool 
+            </button>
         </div>
         <div className="dc-hor-container" ref ={animationHandler}>
         <button onClick={() => {
