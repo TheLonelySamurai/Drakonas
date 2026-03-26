@@ -18,7 +18,17 @@ contextBridge.exposeInMainWorld("mainFunctions", {
 contextBridge.exposeInMainWorld('menuNav',{
   onReturnHome: (callback: () => void) => ipcRenderer.on("projects", callback)
 });
+
 contextBridge.exposeInMainWorld("historyAPI", {
-  onUndo: (callback: () => void) => ipcRenderer.on("undo", callback),
-  onRedo: (callback: () => void) => ipcRenderer.on("redo", callback),
+  onUndo: (callback: () => void) => {
+    const subscription = (_event: any) => callback();
+    ipcRenderer.on("undo", subscription);
+    // Return a function to remove THIS specific listener
+    return () => ipcRenderer.removeListener("undo", subscription);
+  },
+  onRedo: (callback: () => void) => {
+    const subscription = (_event: any) => callback();
+    ipcRenderer.on("redo", subscription);
+    return () => ipcRenderer.removeListener("redo", subscription);
+  },
 });

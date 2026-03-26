@@ -6,33 +6,43 @@ import '../css/drawingCanvas.css';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
+import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
+    //Canvases
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
     const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
-    const wasByAlt = useRef(false);
+    const toolsHandler = useRef<HTMLDivElement | null>(null);
+    //Color inputs
+    const inputPrimary = useRef<HTMLInputElement | null>(null);
+    const inputSecondary = useRef<HTMLInputElement | null>(null);
+    //Tool initialization
     const toolMode = useRef("pen");
-    const temporaryPoints = useRef([]);
-    const onionSkinEnabled = useRef(false);
-    const currentScale = useRef(1);
-    const isDrawing = useRef(false);
-    const isMovingCanvas = useRef(false);
-    const movingCanvas = useRef(false);
-    const lastPos = useRef({ x: 0, y: 0 });
-    const paths = useRef<Path2D[]>([]);
-    const undonePaths = useRef<Path2D[]>([]);
-    var p = useRef<Path2D | null>(null);
     const tools = new Map<String, Tool>();
     tools.set("pen", new Pen());
     tools.set("line", new Line());
-    const frames = useRef<Path2D[][]>([]); // Array of frames, each frame is an array of paths
+    //Deprecated 
+    const temporaryPoints = useRef([]);
+    const isDrawing = useRef(false);
+    //Canvas Variables
+    const onionSkinEnabled = useRef(false);
+    const currentScale = useRef(1);
+    const isMovingCanvas = useRef(false);
+    const movingCanvas = useRef(false);
+    const wasByAlt = useRef(false);
+    const lastPos = useRef({ x: 0, y: 0 });
+    //Undo Redo and Frames
+    const paths = useRef<Map<StrokeSettings,Path2D>[]>([]);
+    const undonePaths = useRef<Map<StrokeSettings,Path2D>[]>([]);
+    const frames = useRef<Map<StrokeSettings, Path2D>[][]>([]); // Array of frames, each frame is an array of paths
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
-        // Runs AFTER render
+        // Runs AFTER render, the initialization of the elements to their functionality
         const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
         if (framesHolder) {
             framesHolder.appendChild(framesHandler.current);
@@ -45,22 +55,33 @@ function DrawingCanvas() {
         if (historyHolder) {
             historyHolder.appendChild(historyHandler.current);
         }
+        const toolsHolder = document.querySelector('.tools-holder') as HTMLElement;
+        if (toolsHolder){
+            toolsHolder.appendChild(toolsHandler.current);
+        }
         const canvas = canvasRef.current;
         Tool.canvas = canvas;
         Tool.scale = currentScale.current;
+        Tool.colorPrimary = inputPrimary.current.value;
+        Tool.colorSecondary = inputSecondary.current.value;
         
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         clearCanvas();
         clearOnionSkin();
-        
-        window.historyAPI.onUndo(() => undo());
-        window.historyAPI.onRedo(() => redo());
+        saveFrame();
+        const removeUndo = window.historyAPI.onUndo(() => undo());
+        const removeRedo = window.historyAPI.onRedo(() => redo());
+
+        return () => {
+            removeUndo();
+            removeRedo();
+        };
     }, []);
     //Frame Related
         function saveFrame() {
             // Save the current paths into the current frame
-            frames.current[currentFrameIndex.current] = [...paths.current];
+
             // Update the preview for this frame
             addPreviewFrameToFramesHandler(currentFrameIndex.current);
 
@@ -76,13 +97,12 @@ function DrawingCanvas() {
             }
 
             paths.current = []; // Clear current paths for the new frame
-            p.current = null; // Reset current path
         }
 
         function loadFrame(index: number) {
             if (index < 0 || index >= frames.current.length) return;
-            paths.current = [...frames.current[index]];
             currentFrameIndex.current = index;
+
             redrawCanvas();
             if(onionSkinEnabled.current){
                 clearOnionSkin();
@@ -153,9 +173,6 @@ function DrawingCanvas() {
             ctx.lineWidth = 1;
             ctx.strokeStyle = 'black';
             ctx.lineCap = 'round';
-            frames.current[frameIndex].forEach(path => {
-                ctx.stroke(path);
-            });
             //resize the preview canvas to be smaller
             frameCanvas.style.width = '160px';
             frameCanvas.style.height = '120px';
@@ -187,9 +204,7 @@ function DrawingCanvas() {
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             ctx.globalAlpha = 0.5; // Set transparency for onion skin effect
-            frames.current[index].forEach(path => {
-                ctx.stroke(path);
-            });
+            
             ctx.globalAlpha = 1.0; // Reset transparency
         }
 
@@ -215,12 +230,22 @@ function DrawingCanvas() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         clearCanvas();
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = 'black';
-        ctx.lineCap = 'round';
-        paths.current.forEach(path => {
-            ctx.stroke(path);
-        });
+        // console.log("PATHS + " +paths.current);
+        for(let i = 0; i < paths.current.length; i ++){
+            let map = paths.current[i];
+            // console.log(map);
+            map.forEach(function (value, key){
+                // console.log("KEY: " + key + " | VALUE: " + value)
+                if (value == null)return;
+                // console.log(key);
+                // console.log(value)
+                ctx.fillStyle = key.fillStyle;
+                ctx.strokeStyle = key.strokeStyle;
+                ctx.lineWidth = key.lineWidth;
+                ctx.lineCap  = key.lineCap;
+                ctx.stroke(value);
+            });
+        }
     }
 /*
     // function exportToGif(){
@@ -263,7 +288,6 @@ function DrawingCanvas() {
 */
     
     
-    //Line Tool
     //Mouse functions
     function getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -289,7 +313,16 @@ function DrawingCanvas() {
         // }
         Tool.canvas = canvasRef.current;
         Tool.scale = currentScale.current;
-        tools.get(toolMode.current).down(e);
+        const tool = tools.get(toolMode.current);
+        tool.down(e);
+        
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
+        }
         
     }
 
@@ -308,16 +341,30 @@ function DrawingCanvas() {
         //     isDrawing.current = false;
         // }
         
-        const path = tools.get(toolMode.current).up();
-        // paths.current.push(path);
-        saveFrame(); // Save the frame after finishing a path
+        const tool = tools.get(toolMode.current);
+        tool.up();
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
+        }
     }
 
     function handleMouseMove(e: React.MouseEvent<HTMLCanvasElement>) {
         if(isMovingCanvas.current) return; // Don't draw if we're moving the canvas
         Tool.canvas = canvasRef.current;
         Tool.scale = currentScale.current;
-        tools.get(toolMode.current).move(e);
+        const tool = tools.get(toolMode.current);
+        tool.move(e);
+        if (tool.actionFinished == 2){
+            // Save the frame after finishing a action
+            paths.current.push(tool.exportActionMap());
+            saveFrame(); 
+            tool.actionFinished = 0;
+            undonePaths.current = []
+        }
     }
     //Mouse moving canvas functions
     function getMousePosMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
@@ -417,13 +464,15 @@ function DrawingCanvas() {
             undonePaths.current.push(lastPath);
             redrawCanvas();
         }
+        console.log("UNDO")
     }
     function redo(){
-            const lastUndonePath = undonePaths.current.pop();
-            if (lastUndonePath) {
-                paths.current.push(lastUndonePath);
-                redrawCanvas();
-            }
+        const lastUndonePath = undonePaths.current.pop();
+        if (lastUndonePath) {
+            paths.current.push(lastUndonePath);
+            redrawCanvas();
+        }
+        console.log("REDO")
     }
     
     function moveCanvasButton(){
@@ -435,7 +484,7 @@ function DrawingCanvas() {
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
-
+    //Color Change Tools
 
     return (
     <div className="drawingCanvasContainer">
@@ -496,15 +545,6 @@ function DrawingCanvas() {
                     <li key={index}>Path {index + 1}</li>
                 ))}
             </ul>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "line"
-            }}>
-               Line Tool 
-            </button>
 
         </div>
         <div className="dc-hor-container" ref ={animationHandler}>
@@ -596,6 +636,64 @@ function DrawingCanvas() {
         </button>
         </div>
         <div className='dc-vert-container' ref={framesHandler}></div>
+        <div className='dc-vert-container' ref={toolsHandler}>
+            <div className="colorSelector">
+                <p>Choose your colors:</p>
+                <div>
+                    <input
+                    ref={inputPrimary}
+                    type="color"
+                    id="primary-color"
+                    name="primary-color"
+                    defaultValue="#e66465"
+                    onChange={()=>{
+                        Tool.colorPrimary = inputPrimary.current.value;
+                    }}
+                    />
+                    <label htmlFor="primary-color">Primary Color</label>
+                </div>
+                <div>
+                    <input
+                    ref={inputSecondary}
+                    type="color"
+                    id="secondary-color"
+                    name="secondary-color"
+                    defaultValue="oklab(50% 0.1 0.1 / 0.5)"
+                    onChange={()=>{
+                        Tool.colorSecondary = inputSecondary.current.value;
+                    }}
+                    />
+                    <label htmlFor="secondary-color">Secondary Color</label>
+                </div>
+            </div>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "pen"
+            }}>
+               Pen Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "line"
+            }}>
+               Line Tool 
+            </button>
+            <button onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+            }}>
+               Shape Tool 
+            </button>
+        </div>
     </div>
     );
 }

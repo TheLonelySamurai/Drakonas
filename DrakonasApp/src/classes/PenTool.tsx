@@ -1,34 +1,38 @@
+import StrokeSettings from "./StrokeSettings";
 import Tool from "./Tool";
 
 class Pen extends Tool{
-    public lineWidth = 1;
-    public strokeStyle = "black";
+    public lineWidth = 59;
     constructor(){
         super();
     }
     down(e: React.MouseEvent<HTMLCanvasElement>) {
         super.down(e);
         this.p = new Path2D();
-        console.log("DOWN")
+        this.actionFinished = 1;
     }
 
-    up():Path2D {
+    up() {
+        var strokeSet = new StrokeSettings();
+        strokeSet.strokeStyle = Tool.colorPrimary;
+        strokeSet.lineWidth = this.lineWidth;
+        strokeSet.lineCap = 'round';
+        this.saveAction(strokeSet, this.p);
         const temp = this.p;
         this.p = null;
         Tool.isDrawing = false;
-        console.log("UP")
-        return temp;//To send to the system to undo/redo
+        this.actionFinished = 2;
+
     }
 
     move(e: React.MouseEvent<HTMLCanvasElement>) {
 
         super.move(e);
         const ctx = super.getCanvas();
-        console.log("WILL")
         if (ctx == null) return;
         if (Tool.isDrawing){
             ctx.lineWidth = this.lineWidth;
-            ctx.strokeStyle = this.strokeStyle;
+            ctx.strokeStyle = Tool.colorPrimary;
             ctx.lineCap = 'round';
             this.p.moveTo(Tool.lastPos.x, Tool.lastPos.y);
             this.p.lineTo(this.pos.x, this.pos.y);
@@ -36,7 +40,6 @@ class Pen extends Tool{
 
             Tool.lastPos = this.pos;
             
-            console.log("MOVE")
         }
     }
 }

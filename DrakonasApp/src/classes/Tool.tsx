@@ -1,12 +1,20 @@
 import PosXY from "./PosXY";
+import StrokeSettings from "./StrokeSettings";
 abstract class Tool {
     public static scale: number;
     public static isDrawing: boolean;
     public static lastPos: PosXY;
     public static canvas: HTMLCanvasElement;
+    public static order : number = 0;
     public pos: PosXY;
     public p: Path2D;
+    public static colorPrimary : string | CanvasGradient;
+    public static colorSecondary : string | CanvasGradient;
+    public actions : Map<StrokeSettings, Path2D>;
+    public actionFinished : number;
     constructor() {
+        this.actions = new Map<StrokeSettings, Path2D>();
+        this.actionFinished = 0;
     }
     
     static getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -25,11 +33,10 @@ abstract class Tool {
         Tool.lastPos = Tool.getMousePos(e);
     }
 
-    up():Path2D {
+    up(){
         //Need to save the current path now!
         this.p = null;
         Tool.isDrawing = false;
-        return null;
     }
 
     move(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -45,5 +52,17 @@ abstract class Tool {
         return ctx;
 
     }
+    saveAction(strokeSet : StrokeSettings, path: Path2D){
+        this.actions.set(strokeSet, path);
+    }
+    exportActionMap():Map<StrokeSettings, Path2D>{
+        var temp = new Map<StrokeSettings, Path2D>();
+        this.actions.forEach(function (value,key){
+            temp.set(key,value);
+        })
+        this.actions.clear();
+        return temp;
+    }
+
 }
 export default Tool;
