@@ -92,14 +92,29 @@ class ShapeTool extends Tool{
 
     }
     oval(ctx: CanvasRenderingContext2D,pos1: PosXY,pos2: PosXY){
-        var radius=Math.sqrt((pos1.x-pos2.x)*(pos1.x-pos2.x)+(pos1.y-pos2.y)*(pos1.y-pos2.y));
+        if(this.isShift){
+        // var radius=Math.sqrt((pos1.x-pos2.x)*(pos1.x-pos2.x)+(pos1.y-pos2.y)*(pos1.y-pos2.y));
         var x=Math.round((pos1.x+pos2.x)/2);
         var y=Math.round((pos1.y+pos2.y)/2);
-        radius=radius/2;
+        var minimumX=Math.min((pos1.x-x),(pos2.x-x));
+        var minimumY=Math.min((pos1.y-y),(pos2.y-y));
+        var radius=Math.abs(Math.min(minimumX,minimumY)); 
         ctx.beginPath();
         ctx.arc(x,y,radius,0,Math.PI*2);
         ctx.stroke();
-        ctx.closePath();
+        ctx.closePath(); 
+        }
+        else{
+            var radiusX=Math.abs(pos2.x-pos1.x)/2;
+            var radiusY=Math.abs(pos2.y-pos1.y)/2;
+            var centerX=pos1.x+radiusX*Math.sign(pos2.x-pos1.x);
+            var centerY=pos1.y+radiusY*Math.sign(pos2.y-pos1.y);
+            ctx.beginPath();
+            ctx.ellipse(centerX,centerY,radiusX,radiusY,0,0,2*Math.PI);
+            ctx.stroke();
+            ctx.closePath();
+        }
+        
     }
 }
 export default ShapeTool;
