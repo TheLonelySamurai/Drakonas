@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import NavButton from './Partials/NavButton'
 import UserController from '../classes/UserController';
 import '../css/profilePage.css';
-import { session } from 'electron';
 function ProfilePage(){
     const [count,setCount] = useState(0)
     async function getJSONUserData():Promise<JSON>{
