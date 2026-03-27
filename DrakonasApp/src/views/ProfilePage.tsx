@@ -7,14 +7,19 @@ function ProfilePage(){
     const [count,setCount] = useState(0)
     async function getJSONUserData():Promise<JSON>{
         var userData = await UserController.retrieveUser();
-        return JSON.parse(userData);
+        if (userData != null){
+            return JSON.parse(userData);
+        }
+        return null;
 
     }
     useEffect(() => {
         var data = getJSONUserData();
         data.then(function(user){
-            document.getElementById('pf-page-username').innerHTML = user.username;
-            document.getElementById('pf-page-email').innerHTML = user.email;
+            if (user){
+                document.getElementById('pf-page-username').innerHTML = user.username;
+                document.getElementById('pf-page-email').innerHTML = user.email;
+            }
         })
     },[]);
     return(
