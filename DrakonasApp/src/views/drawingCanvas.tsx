@@ -41,6 +41,7 @@ function DrawingCanvas() {
     const paths = useRef<Map<StrokeSettings,Path2D>[]>([]);
     const undonePaths = useRef<Map<StrokeSettings,Path2D>[]>([]);
     const frames = useRef<Map<StrokeSettings, Path2D>[][]>([]); // Array of frames, each frame is an array of paths
+    const framesUndonePaths = useRef<Map<StrokeSettings, Path2D>[][]>([]); // Array of frames, each frame is an array of paths
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {

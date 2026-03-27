@@ -1,6 +1,7 @@
 import React from 'react';
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+
 import './index.css'
 import Backend from './callBackend';
 import PageTemplate from './views/Partials/MainPageTemplate';
@@ -15,6 +16,7 @@ import Login from './views/Login'
 import SignUp from './views/SignUp'
 createRoot(document.body).render(
   <StrictMode>
+    
     <Backend/>
     <PageTemplate Page={SignUp} id="signup-page" />
     <PageTemplate Page={Login} id="login-page"/>
