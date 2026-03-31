@@ -10,9 +10,13 @@ import Shape from "../classes/ShapeTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
+    const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
-    const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    //Layers
+    const layersDivRef = useRef<HTMLDivElement | null>(null);
+    const currentLayerDivRef = useRef<HTMLDivElement | null>(null);
+    const canvasLayers = useRef<HTMLCanvasElement[]>([]);
     //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
@@ -498,19 +502,29 @@ function DrawingCanvas() {
                     onWheel={handleMouseScrollMoveCanvas}>
             <div className="canvasContainer" >
                 <canvas className='canvas'
+                    ref={backgroundCanvasRef}
+                    width={800}
+                    height={600}
+                />
+                <div className="canvasLayers">
+
+                </div>
+                <canvas className='canvas'
                     ref={canvasOnionRef}
                     width={800}
                     height={600}
                 />
-                <canvas className='canvas'
-                    ref={canvasRef}
-                    width={800}
-                    height={600}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onMouseMove={handleMouseMove}
-                />
+                <div className="currentCanvasLayer">
+                    <canvas className='canvas'
+                        ref={canvasRef}
+                        width={800}
+                        height={600}
+                        onMouseDown={handleMouseDown}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                    />
+                </div>
             </div>
         </div>
         <div className="dc-vert-container" ref={historyHandler}>

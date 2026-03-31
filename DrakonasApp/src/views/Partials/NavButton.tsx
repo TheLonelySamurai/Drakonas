@@ -1,31 +1,23 @@
 import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
+import {useNavigate} from 'react-router-dom'
 import UserController from '../../classes/UserController';
-function Navigation( {name, destId, id, conditional}:{name:string, destId:string, id?:string, conditional?:string}){
-    const clearPages = () => {
-        for (const element of document.getElementsByClassName('page')){
-            const pageElement = element as HTMLElement;
-            pageElement.style.display = 'none';
-        }
-    }
+function Navigation( {name, url, id, conditional}:{name:string, url:string, id?:string, conditional?:string}){
+    const navigate = useNavigate(); // Hook is called at the top level
+
+    const goTo = (url:string) => {
+        navigate(url); 
+    };
+
     async function goToPage() {
-        clearPages();
-        var el = document.getElementById(destId) as HTMLElement;
         if (conditional != null){ 
             var user = await UserController.retrieveUser();
             if (user == "null"){
-                el = document.getElementById(conditional) as HTMLElement;
-            }
-            
-            if (el) {
-                el.style.display = 'flex';
+                goTo(conditional);
+                return;
             }
         }
-        else{
-            if (el) {
-                el.style.display = 'flex';
-            }
-        }
+        goTo(url);
     }
     return <>
      <button className="profile-toolbar-button" id={id} onClick={goToPage}>{name}</button>

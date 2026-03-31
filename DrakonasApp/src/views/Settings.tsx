@@ -8,7 +8,7 @@ function Settings(){
     const [count,setCount] = useState(0)
     return(
         <div className="page settings" id="settings-page">
-            <NavButton name="Back to Main Page" destId="project-page"/>
+            <NavButton name="Back to Main Page" url="/project"/>
             <div className="settings-column-holder"><h1 >Application Settings</h1>
                 <form onSubmit={async (e)=>{
                     e.preventDefault;

@@ -23,7 +23,7 @@ function ProfilePage(){
     },[]);
     return(
         <div className="page profile-page" id="profile-page">
-            <NavButton name="Back to Main Page" destId="project-page"/>
+            <NavButton name="Back to Main Page" url="/project"/>
             <div className="profile-container">
                 <div className="profile-pic">Profile Picture</div>
                 <div className="profile-row-holder">

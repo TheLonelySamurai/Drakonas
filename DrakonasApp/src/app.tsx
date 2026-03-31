@@ -1,4 +1,6 @@
 import React from 'react';
+import { MemoryRouter, Routes, Route } from 'react-router-dom';
+
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
@@ -14,16 +16,16 @@ import Main from 'electron/main';
 import Login from './views/Login'
 import SignUp from './views/SignUp'
 createRoot(document.body).render(
-  <StrictMode>
-    <Backend/>
-    <PageTemplate Page={SignUp} id="signup-page" />
-    <PageTemplate Page={Login} id="login-page"/>
-    <PageTemplate Page={ProjectPage} id="project-page" />
-    <PageTemplate Page={Workshop} id="workshop-page"startPage={true}/>
-    <PageTemplate Page={ProfilePage} id="profile-page" />
-    <PageTemplate Page={Settings} id="settings-page"    />
-    <PageTemplate Page={ProjectType} id="project-type-page" />
-    <PageTemplate Page={Login} id="login-page"/>
-    <PageTemplate Page={SignUp} id="signup-page"/>
-  </StrictMode>,
-)
+  <MemoryRouter initialEntries={['/login', '/signup', '/project', '/projecttype', '/workshop', '/settings', '/profile']} initialIndex={0}>
+    <Routes>
+      <Route path="/signup" element={<PageTemplate Page={SignUp} id="signup-page" />} />
+      <Route path="/login" element={<PageTemplate Page={Login} id="login-page"/>} />
+      <Route path="/project" element={<PageTemplate Page={ProjectPage} id="project-page" />} />
+      <Route path="/projecttype" element={<PageTemplate Page={ProjectType} id="project-page" />} />
+      <Route path="/workshop" element={<PageTemplate Page={Workshop} id="workshop-page" />} />
+      <Route path="/settings" element={<PageTemplate Page={Settings} id="settings-page" />} />
+      <Route path="/profile" element={<PageTemplate Page={ProfilePage} id="profile-page" />} />
+    </Routes>
+  </MemoryRouter>
+);
+

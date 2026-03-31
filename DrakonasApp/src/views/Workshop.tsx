@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import '../css/workshop.css';
-
+import NavButton from './Partials/NavButton';
 import DrawingCanvas from './drawingCanvas';
 
 // import GIF from 'gif.js';
@@ -34,6 +34,7 @@ function Workshop(){
                 <div className="animation-holder"></div>
             </div>
             <div className="editing-segment">
+                <NavButton name="Projects" url="/project"/>
                 <div className="history-container">
                     <div className="section-object">History</div>
                     <div className="history-holder"></div>

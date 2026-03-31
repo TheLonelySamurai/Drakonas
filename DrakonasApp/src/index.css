@@ -19,7 +19,7 @@ body {
   color:var(--text-light);
 }
 .page{
-  display: none;
+  display: flex;
 }
 body{
     background-color:var(--bg-dark);

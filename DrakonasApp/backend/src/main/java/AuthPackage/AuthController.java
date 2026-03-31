@@ -78,6 +78,13 @@ public class AuthController {
                         // Create a response that includes the ID
                         Map<String, Object> response = new HashMap<>(userSession);
                         response.put("sessionId", req.session().id()); // Send ID to Electron
+//                        ResponseCookie cookie = ResponseCookie.from("JSESSIONID", sessionId)
+//                                .httpOnly(true)
+//                                .sameSite("None")   // allows cross-origin
+//                                .secure(false)      // localhost doesn't need HTTPS
+//                                .path("/")
+//                                .build();
+//                        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
                         manualSessions.put(req.session().id(), userSession);
                         res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
                         System.out.println((req.session().attribute("user")).toString());
