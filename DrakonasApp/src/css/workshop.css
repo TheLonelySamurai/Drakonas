@@ -14,7 +14,7 @@
     border-right: 3px solid var(--border);
     z-index: 10;
 }
-.toolbar button{
+.toolbar .toolbar-button{
     margin: 12px 12px;
     border-radius: 12px;
     background-color:var(--bg-dark2);
@@ -23,7 +23,7 @@
     min-width:40px;
     color: var(--text-light)
 }
-.toolbar button:hover{
+.toolbar .toolbar-button:hover{
     background-color:var(--bg-hover);
     border:solid var(--text-muted);
     border-radius:25px;

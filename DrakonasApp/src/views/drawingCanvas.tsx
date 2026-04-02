@@ -523,7 +523,22 @@ Steps To Change Layer:
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
-    //Color Change Tools
+    //CSS related functions
+    function openCloseToolProperties(){
+        const menu = toolPropertiesMenu.current;
+        if (!menu) return;
+        console.log("Opening/Closing Tool Properties Menu");
+        console.log(menu.classList);
+        if (menu.classList.contains('closed')){
+            menu.classList.remove('closed');
+            menu.classList.add('open');
+        }
+        else if (menu.classList.contains('open')){
+            menu.classList.remove('open');
+            menu.classList.add('closed');
+        }   
+    }
+
 
     return (
     <div className="drawingCanvasContainer">
@@ -638,7 +653,7 @@ Steps To Change Layer:
         </div>
         <div className='dc-vert-container' ref={framesHandler}></div>
         <div className='dc-vert-container tools-handler' ref={toolsHandler}>
-            <button onClick={() => {
+            <button className="toolbar-button" onClick={() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
@@ -647,7 +662,7 @@ Steps To Change Layer:
             }}>
                Pen Tool 
             </button>
-            <button onClick={() => {
+            <button className="toolbar-button" onClick={() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
@@ -656,12 +671,13 @@ Steps To Change Layer:
             }}>
                Line Tool 
             </button>
-            <button onClick={() => {
+            <button className="toolbar-button" onClick={() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
                 toolMode.current = "shape"
+                
             }}>
                Shape Tool 
             </button>
@@ -696,9 +712,9 @@ Steps To Change Layer:
                 </div>
             </div>
         </div>
-        <div className="tool-properties-menu" ref={toolPropertiesMenu}>
+        <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
-                <div className="tool-properties-title"><h3>Tool Properties</h3><FaCog id='fa-cog' /></div>
+                <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3><FaCog id='fa-cog' /></button></div>
             </div>
         </div>
     </div>
