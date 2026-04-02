@@ -40,6 +40,7 @@ function Workshop(){
                 </div>
                 <div className="large-part">
                     <div className="section-object">Layers</div>
+                    <div className="layers-holder"></div>
                 </div>
             </div>
         </div>

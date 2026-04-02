@@ -12,12 +12,17 @@ function DrawingCanvas() {
     //Canvases
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
-    const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    //Layers
+    const layersDivRef = useRef<HTMLDivElement | null>(null);
+    const currentLayerDivRef = useRef<HTMLDivElement | null>(null);
+    const canvasLayers = useRef<Map<StrokeSettings,Path2D>[][]>([[]]);
+    const currentLayerIndex=useRef(0);
     //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
     const toolsHandler = useRef<HTMLDivElement | null>(null);
+    const layerHandler=useRef<HTMLDivElement | null>(null);
     //Color inputs
     const inputPrimary = useRef<HTMLInputElement | null>(null);
     const inputSecondary = useRef<HTMLInputElement | null>(null);
@@ -57,6 +62,10 @@ function DrawingCanvas() {
         if (historyHolder) {
             historyHolder.appendChild(historyHandler.current);
         }
+        const layerHolder = document.querySelector('.layers-holder') as HTMLElement;
+        if (layerHolder) {
+            layerHolder.appendChild(layerHandler.current);
+        }
         const toolsHolder = document.querySelector('.tools-holder') as HTMLElement;
         if (toolsHolder){
             toolsHolder.appendChild(toolsHandler.current);
@@ -72,6 +81,7 @@ function DrawingCanvas() {
         clearCanvas();
         clearOnionSkin();
         saveFrame();
+        drawBackground();
         const removeUndo = window.historyAPI.onUndo(() => undo());
         const removeRedo = window.historyAPI.onRedo(() => redo());
 
@@ -219,7 +229,12 @@ function DrawingCanvas() {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             onionSkinEnabled.current = false;
         }
-
+        function drawBackground() {
+            const canvas = backgroundCanvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
     function clearCanvas() {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -248,6 +263,114 @@ function DrawingCanvas() {
                 ctx.stroke(value);
             });
         }
+    }
+    //Layers Functions
+    function createLayer(){
+
+        console.log("layer");
+        const layer=document.createElement('canvas');
+        layer.className="canvas";
+        layer.width=800;
+        layer.height=600;
+        layer.id=`Mainlayer-${canvasLayers.current.length}`;
+        layersDivRef.current.appendChild(layer);
+        addLayerPreview();
+        canvasLayers.current.push([]);
+    }
+    function addLayerPreview(){
+        const layerPreviewContainer = document.createElement('div');
+            const layerLabel = document.createElement('div');
+            layerLabel.textContent = `Layer ${canvasLayers.current.length}`;
+            layerLabel.style.textAlign = 'center';
+            layerLabel.style.fontSize = '12px';
+            layerLabel.style.marginBottom = '4px';
+            layerPreviewContainer.appendChild(layerLabel);
+            const layerDeleteButton = document.createElement('button');
+            layerDeleteButton.textContent = 'X';
+            layerDeleteButton.style.position = 'absolute';
+            layerDeleteButton.style.top = '0';
+            layerDeleteButton.style.right = '0';
+            layerDeleteButton.style.background = 'red';
+            layerDeleteButton.style.color = 'white';
+            layerDeleteButton.style.border = 'none';
+            layerDeleteButton.addEventListener('click', () => {
+                console.log("Button to be worked on");
+                // removeLayer(currentLayerIndex.current);
+            });
+            layerPreviewContainer.appendChild(layerDeleteButton);
+            const layerCanvasButton = document.createElement('button');
+            const layerCanvas = document.createElement('canvas');
+            layerCanvas.width = 800;
+            layerCanvas.height = 600;
+            const ctx = layerCanvas.getContext('2d');
+            if (!ctx) return;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'black';
+            ctx.lineCap = 'round';
+            //resize the preview canvas to be smaller
+            layerCanvas.style.width = '160px';
+            layerCanvas.style.height = '120px';
+            layerCanvasButton.appendChild(layerCanvas);
+            var index=canvasLayers.current.length-1;
+            layerCanvasButton.addEventListener('click', () => {
+                switchLayers(index);
+            });
+            layerPreviewContainer.style.position = 'relative';
+            layerPreviewContainer.appendChild(layerCanvasButton);
+            layerPreviewContainer.id = `layer-${currentLayerIndex.current}`;
+            layerPreviewContainer.className = 'layer';
+            //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
+            const layerHolder = layerHandler.current;
+            if (!layerHolder) return;
+            layerHolder.appendChild(layerPreviewContainer);
+
+    }
+    function switchLayers(index:number){
+        canvasLayers.current[currentLayerIndex.current]=paths.current;
+        clearCanvas();
+        const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas')
+        for(let i=0;i<canvasLayerElements.length;i++){
+            console.log(i, index, currentLayerIndex);
+            if(canvasLayerElements[i].id==`Mainlayer-${currentLayerIndex.current+1}`){
+                console.log(`Mainlayer-${currentLayerIndex.current+1}`);
+    
+                const canvas=canvasLayerElements[i];
+               const ctx=canvasLayerElements[i].getContext('2d');
+               ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i=0;i<paths.current.length;i++){
+                     let map = paths.current[i];
+            // console.log(map);
+                    map.forEach(function (value, key){
+                        if (value == null)return;
+                        ctx.fillStyle = key.fillStyle;
+                        ctx.strokeStyle = key.strokeStyle;
+                        ctx.lineWidth = key.lineWidth;
+                        ctx.lineCap  = key.lineCap;
+                        ctx.stroke(value);
+                    });
+                }
+                continue;
+            }
+            if (canvasLayerElements[i].id==`Mainlayer-${index+1}`){
+                console.log(""+canvasLayerElements[i].id+" Index not console index")
+                const canvas=canvasLayerElements[i];
+               const ctx=canvasLayerElements[i].getContext('2d');
+               ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        
+        currentLayerIndex.current=index;
+        paths.current=canvasLayers.current[index]
+        if(paths.current==null){
+            paths.current=[];
+        }
+        console.log(paths.current);
+        redrawCanvas();
+    }
+    function moveLayers(){
+
     }
 /*
     // function exportToGif(){
@@ -498,6 +621,14 @@ function DrawingCanvas() {
                     onWheel={handleMouseScrollMoveCanvas}>
             <div className="canvasContainer" >
                 <canvas className='canvas'
+                    ref={backgroundCanvasRef}
+                    width={800}
+                    height={600}
+                />
+                <div className="canvasLayers">
+
+                </div>
+                <canvas className='canvas'
                     ref={canvasOnionRef}
                     width={800}
                     height={600}
@@ -654,7 +785,9 @@ function DrawingCanvas() {
             Export To Gif
         </button>
         </div>
+        <button onClick={()=>{createLayer()}}>Create Layer</button>
         <div className='dc-vert-container' ref={framesHandler}></div>
+        <div className='dc-vert-container' ref={layerHandler}></div>
         <div className='dc-vert-container' ref={toolsHandler}>
             <div className="colorSelector">
                 <p>Choose your colors:</p>
