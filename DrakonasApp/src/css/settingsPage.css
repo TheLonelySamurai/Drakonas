@@ -25,7 +25,22 @@
 .settings-table th, .settings-table td { text-align:left; padding:1rem; border-bottom:1px solid rgba(255,255,255,0.04); }
 .settings-table th { color:var(--text-muted); font-weight:600; }
 
-
+.settings-button{
+    margin-top: 20px;
+    padding: 10px;
+    width: 150px;
+    background-color:var(--bg-card);
+    color: var(--text-light);
+    border:2px solid var(--border);
+    border-radius:5px;
+}
+.settings-button:hover{
+    background-color:rgb(92, 92, 92);
+    border:solid rgb(92, 92, 92);
+    border-radius:5px;
+    color: var(--text-light);
+    transition: all 0.2s ease-in-out;
+}
 .noImpact{
     height: inherit;
     width: inherit;

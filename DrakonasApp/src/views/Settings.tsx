@@ -25,7 +25,7 @@ function Settings(){
                         <tr><td>Volume</td><td>...</td></tr>
                     </tbody>
                 </table>
-                <button>Save Settings</button>
+                <button className="settings-button">Save Settings</button>
                 </form>
             </div>
         </div>

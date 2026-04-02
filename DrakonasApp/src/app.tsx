@@ -16,7 +16,7 @@ import Main from 'electron/main';
 import Login from './views/Login'
 import SignUp from './views/SignUp'
 createRoot(document.body).render(
-  <MemoryRouter initialEntries={['/login', '/signup', '/project', '/projecttype', '/workshop', '/settings', '/profile']} initialIndex={0}>
+  <MemoryRouter initialEntries={['/login', '/signup', '/project', '/projecttype', '/workshop', '/settings', '/profile']} initialIndex={4}>
     <Routes>
       <Route path="/signup" element={<PageTemplate Page={SignUp} id="signup-page" />} />
       <Route path="/login" element={<PageTemplate Page={Login} id="login-page"/>} />
