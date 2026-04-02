@@ -57,7 +57,7 @@ function SignUp(){
             <input type="password" className="word-input" name="validate_password"/>
             <button type="submit" className="credentials-button">Submit</button>
         </form>
-            <div>Have an account already? <NavButton name="Login" destId="login-page" id="signup-to-login-button"/></div>
+            <div>Have an account already? <NavButton name="Login" url="/login" id="signup-to-login-button"/></div>
     </div>
     )
 }

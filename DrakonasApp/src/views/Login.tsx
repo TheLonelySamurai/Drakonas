@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import {useNavigate} from 'react-router-dom'
 import NavButton from "./Partials/NavButton"
 function Login(){
     async function login(username: string, password: string) {
@@ -17,7 +18,7 @@ function Login(){
             const text = await response.text();
             throw new Error(text);
         }
-
+        
         return await response.text();
     }
     const [count,setCount] = useState(0)
@@ -42,7 +43,7 @@ function Login(){
             <input type="text" className="word-input" name="username"/>
             <label htmlFor="password" className="input-holder">Password</label>
             <input type="password" className="word-input" name="password"/>
-            <NavButton name="Sign Up" destId="signup-page" id="login-to-signup-button"/>
+            <NavButton name="Don't have an account?" url="/signup" id="signup-nav-button"/>
             <button type="submit" className="credentials-button">Submit</button>
         </form>
     </div>

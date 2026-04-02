@@ -1,5 +1,6 @@
 import Tool from "./Tool";
 import PosXY from "./PosXY";
+import StrokeSettings from "./StrokeSettings";
 class ShapeTool extends Tool{
     public lineWidth=3;
     public strokeStyle="black";
@@ -42,11 +43,11 @@ class ShapeTool extends Tool{
         if (this.temporaryPoints.length >= 2){
             this.temporaryPoints = [];
         }
-        else if (this.temporaryPoints.length == 0){
+        if (this.temporaryPoints.length == 0){
             //start the line!
             this.temporaryPoints.push(pos);
-            console.log("Start")
             Tool.isDrawing = true;
+            this.actionFinished = 1;
         }
         this.finishShape(pos);     
     }
@@ -62,36 +63,47 @@ class ShapeTool extends Tool{
             if(this.temporaryPoints[0] != pos){
                 const ctx=super.getCanvas();
                 ctx.lineWidth=this.lineWidth;
-                ctx.strokeStyle=this.strokeStyle; 
+                ctx.strokeStyle=Tool.colorPrimary; 
                 this.temporaryPoints.push(pos);
                 const pos1 = this.temporaryPoints[0];
                 const pos2 = this.temporaryPoints[1];
-                this.oval(ctx,pos1,pos2);
+                if (this.shapeType == "rectangle"){
+                    this.rectangle(ctx, pos1, pos2);
+                }
+                else if (this.shapeType == "ellipse"){
+                    this.oval(ctx,pos1,pos2);
+                }
+                var strokeSet = new StrokeSettings();
+                strokeSet.strokeStyle = Tool.colorPrimary;
+                strokeSet.lineWidth = this.lineWidth;
+                this.saveAction(strokeSet,this.p);
                 this.p = null;
-                console.log("Finish")
+                this.actionFinished = 2;
                 this.temporaryPoints = [];
                 Tool.isDrawing= false
             }
             
         }
     }
-    rectangle(ctx: CanvasRenderingContext2D,pos1: PosXY,pos2: PosXY){       
+    rectangle(ctx: CanvasRenderingContext2D,pos1: PosXY,pos2: PosXY){    
+        this.p = new Path2D();   
         if (this.isShift){
 
             if((pos2.x-pos1.x)>(pos2.y-pos1.y)){
-                ctx.strokeRect(pos1.x,pos1.y,pos2.y-pos1.y,pos2.y-pos1.y); 
+                this.p.rect(pos1.x,pos1.y,pos2.y-pos1.y,pos2.y-pos1.y); 
             }
             else{
-                ctx.strokeRect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.x-pos1.x); 
+                this.p.rect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.x-pos1.x); 
             }
         }
         else{
-           ctx.strokeRect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.y-pos1.y); 
+           this.p.rect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.y-pos1.y); 
         }
-       
+        ctx.stroke(this.p);
 
     }
     oval(ctx: CanvasRenderingContext2D,pos1: PosXY,pos2: PosXY){
+        this.p = new Path2D();
         if(this.isShift){
         // var radius=Math.sqrt((pos1.x-pos2.x)*(pos1.x-pos2.x)+(pos1.y-pos2.y)*(pos1.y-pos2.y));
         var x=Math.round((pos1.x+pos2.x)/2);
@@ -99,21 +111,18 @@ class ShapeTool extends Tool{
         var minimumX=Math.min((pos1.x-x),(pos2.x-x));
         var minimumY=Math.min((pos1.y-y),(pos2.y-y));
         var radius=Math.abs(Math.min(minimumX,minimumY)); 
-        ctx.beginPath();
-        ctx.arc(x,y,radius,0,Math.PI*2);
-        ctx.stroke();
-        ctx.closePath(); 
+        
+        this.p.arc(x,y,radius,0,Math.PI*2);
         }
         else{
             var radiusX=Math.abs(pos2.x-pos1.x)/2;
             var radiusY=Math.abs(pos2.y-pos1.y)/2;
             var centerX=pos1.x+radiusX*Math.sign(pos2.x-pos1.x);
             var centerY=pos1.y+radiusY*Math.sign(pos2.y-pos1.y);
-            ctx.beginPath();
-            ctx.ellipse(centerX,centerY,radiusX,radiusY,0,0,2*Math.PI);
-            ctx.stroke();
-            ctx.closePath();
+            
+            this.p.ellipse(centerX,centerY,radiusX,radiusY,0,0,2*Math.PI);
         }
+        ctx.stroke(this.p);
         
     }
 }

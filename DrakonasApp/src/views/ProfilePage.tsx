@@ -2,24 +2,28 @@ import { useEffect, useState } from 'react'
 import NavButton from './Partials/NavButton'
 import UserController from '../classes/UserController';
 import '../css/profilePage.css';
-import { session } from 'electron';
 function ProfilePage(){
     const [count,setCount] = useState(0)
     async function getJSONUserData():Promise<JSON>{
         var userData = await UserController.retrieveUser();
-        return JSON.parse(userData);
+        if (userData != null){
+            return JSON.parse(userData);
+        }
+        return null;
 
     }
     useEffect(() => {
         var data = getJSONUserData();
         data.then(function(user){
-            document.getElementById('pf-page-username').innerHTML = user.username;
-            document.getElementById('pf-page-email').innerHTML = user.email;
+            if (user){
+                document.getElementById('pf-page-username').innerHTML = user.username;
+                document.getElementById('pf-page-email').innerHTML = user.email;
+            }
         })
     },[]);
     return(
         <div className="page profile-page" id="profile-page">
-            <NavButton name="Back to Main Page" destId="project-page"/>
+            <NavButton name="Back to Main Page" url="/project"/>
             <div className="profile-container">
                 <div className="profile-pic">Profile Picture</div>
                 <div className="profile-row-holder">

@@ -1,24 +1,26 @@
+
+
 .drawingCanvasContainer{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-start;
     z-index: -10;
+    background-color: inherit;
+    height: 80vh;
     
 }
 .dc-vert-container{
     position: relative;
     display: flex;
     flex-direction: column;
-    margin: 10px;
-    float: right;
+    padding:10px;
 }
 .dc-hor-container{
     position: relative;
     display: flex;
     flex-direction: row;
     margin: 10px;
-    float: right;
 }
 .canvasContainer {
     /* The canvas elements are stacked on top of each other */
@@ -32,13 +34,37 @@
         top: 0;
         left: 0;
     }
-.previewContainer{
-    position: relative;
-    width: 400px;
-    height: 300px;
-    border: 10px solid black;
-    margin: 20px;
-    overflow: hidden;
+.historyButtons button{
+    margin: 12px 12px;
+    border-radius: 12px;
+    background-color:var(--bg-dark2);
+    border:solid var(--text-muted);
+    height:40px;
+    min-width:40px;
+    color: var(--text-light);
+    
+    &:hover{
+        background-color:var(--bg-hover);
+        border:solid var(--text-muted);
+        border-radius:25px;
+        transition: all 0.2s ease-in-out;
+    }
+}
+.animationButtons button{
+    margin: 12px 12px;
+    border-radius: 12px;
+    background-color:var(--bg-dark2);
+    border:solid var(--text-muted);
+    height:40px;
+    min-width:40px;
+    color: var(--text-light);
+    
+    &:hover{
+        background-color:var(--bg-hover);
+        border:solid var(--text-muted);
+        border-radius:25px;
+        transition: all 0.2s ease-in-out;
+    }
 }
 .drawingApp{
     position: relative;
@@ -47,14 +73,146 @@
     justify-content: space-between;
     align-items: flex-start;
     width: 900px;
+    height: 80vh;
     min-height: 600px;
-    height: 70%;
-    border-bottom: 4px solid black;
+    background-image: var(--bg-canvasGradient);
+    border-bottom: 4px solid var(--border);
     overflow: hidden;
+}
+.colorInputContainer{
+    display: flex;
+    flex-direction: column;
+    justify-self: flex-start;
+    align-self: flex-start;
+    justify-content: center;
+    align-items: center;
+    margin-left:-12.5px;
+}
+.colorInput{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 50px;
+    height: 50px;
+    input[type="color"]{
+        width: 100%;
+        height: 100%;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        outline: none;
+        background-image: var(--bg-canvasGradient);
+        box-shadow: none;
+    }
+    
+    input:focus {
+        outline: none;     /* Removes the default focus ring */
+        box-shadow: none;  /* Removes any glowing shadow effects (common in Chrome/Bootstrap) */
+    }
+}
+.colorInputSecondary{
+    float: left;
+    margin-top: -20px;
+    margin-left: 50px;
+    z-index: -1;
 }
 .animation{
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     align-items: flex-start;
+}
+.tool-properties-menu{
+    position: absolute;
+    bottom: -400px;
+    left: 0;
+    width: calc(30vw + 2px);
+    height: 500px;
+    background-color: var(--bg-dark2);
+    border-top: 4px solid var(--border);
+    box-shadow: 0px -4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+.tool-properties-menu.open{
+    animation: slideUp 0.3s ease-out forwards;
+}
+.tool-properties-menu.closed{
+    animation: slideDown 0.3s ease-out forwards;
+}
+.tool-properties-title{
+    color: var(--text-light);
+    font-size: 18px;
+    margin-bottom: 20px;
+    height: 80px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+.tool-properties-menu.open #fa-cog{
+    animation: spin 1.2s cubic-bezier(.49,-1.24,.37,1.14) forwards;
+}
+.tool-properties-menu.closed #fa-cog{
+    animation: spinRev 1.2s cubic-bezier(.24,-0.41,.61,1.77) forwards;
+}
+@keyframes slideUp {
+    from {
+        transform: translateY(0%);
+    }
+    to {
+        transform: translateY(-50%);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50%);
+    }
+    to {
+        transform: translateY(0%);
+    }
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinRev {
+    from {
+        transform: rotate(360deg);
+    }
+    to {
+        transform: rotate(0deg);
+    }
+}
+.div-like-clickable-button{
+    all: unset;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    :focus{
+        outline: none;
+    }
+    &:hover{
+        color: var(--text-hover);
+        cursor: pointer;
+    }
 }

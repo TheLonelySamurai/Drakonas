@@ -1,7 +1,8 @@
 
 import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
-
+import { IconBase } from 'react-icons/lib';
+import { FaCog } from 'react-icons/fa';
 import '../css/drawingCanvas.css';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
@@ -10,6 +11,7 @@ import Shape from "../classes/ShapeTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
+    const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
     //Layers
@@ -22,6 +24,7 @@ function DrawingCanvas() {
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
     const toolsHandler = useRef<HTMLDivElement | null>(null);
+    const toolPropertiesMenu = useRef<HTMLDivElement | null>(null);
     const layerHandler=useRef<HTMLDivElement | null>(null);
     //Color inputs
     const inputPrimary = useRef<HTMLInputElement | null>(null);
@@ -50,6 +53,8 @@ function DrawingCanvas() {
     
     useEffect(() => {
         // Runs AFTER render, the initialization of the elements to their functionality
+        const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
+        const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
         const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
         if (framesHolder) {
             framesHolder.appendChild(framesHandler.current);
@@ -66,9 +71,10 @@ function DrawingCanvas() {
         if (layerHolder) {
             layerHolder.appendChild(layerHandler.current);
         }
-        const toolsHolder = document.querySelector('.tools-holder') as HTMLElement;
+        const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
         if (toolsHolder){
             toolsHolder.appendChild(toolsHandler.current);
+            toolsHolder.appendChild(toolPropertiesMenu.current);
         }
         const canvas = canvasRef.current;
         Tool.canvas = canvas;
@@ -84,7 +90,7 @@ function DrawingCanvas() {
         drawBackground();
         const removeUndo = window.historyAPI.onUndo(() => undo());
         const removeRedo = window.historyAPI.onRedo(() => redo());
-
+        moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
         return () => {
             removeUndo();
             removeRedo();
@@ -155,6 +161,18 @@ function DrawingCanvas() {
 
         }
         function addPreviewFrameToFramesHandler(frameIndex: number) {
+            /*
+                This function creates a div that holds the frame preview, you can click on it to move to that frame
+            
+                1. Create the outer div that will hold the preview canvas and otheer elements (this gets classes added for styling)
+                2. Create other elements (non important for functionality but for styling and quality of life) such as the frame label and delete button
+                3. Create the preview canvas inside of a button element
+                4. Add event listener to the preview canvas button to load the frame when clicked (see function above)
+                5. Draw the preview frame data into the preview canvas, then resize it to be smaller than the actual canvas (this is done after drawing to avoid blurriness)
+                6. Add the preview frame to the frames handler in the correct order based on the frame index
+
+            */ 
+           //Step 1
             const framePreviewContainer = document.createElement('div');
             const frameLabel = document.createElement('div');
             frameLabel.textContent = `Frame ${frameIndex + 1}`;
@@ -220,13 +238,12 @@ function DrawingCanvas() {
             ctx.globalAlpha = 1.0; // Reset transparency
         }
 
+        
         function clearOnionSkin() {
             const canvas = canvasOnionRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             onionSkinEnabled.current = false;
         }
         function drawBackground() {
@@ -246,6 +263,7 @@ function DrawingCanvas() {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
+        console.log("Redrawing canvas with paths: ", paths.current);
         clearCanvas();
         // console.log("PATHS + " +paths.current);
         for(let i = 0; i < paths.current.length; i ++){
@@ -609,7 +627,22 @@ function DrawingCanvas() {
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
-    //Color Change Tools
+    //CSS related functions
+    function openCloseToolProperties(){
+        const menu = toolPropertiesMenu.current;
+        if (!menu) return;
+        console.log("Opening/Closing Tool Properties Menu");
+        console.log(menu.classList);
+        if (menu.classList.contains('closed')){
+            menu.classList.remove('closed');
+            menu.classList.add('open');
+        }
+        else if (menu.classList.contains('open')){
+            menu.classList.remove('open');
+            menu.classList.add('closed');
+        }   
+    }
+
 
     return (
     <div className="drawingCanvasContainer">
@@ -633,28 +666,22 @@ function DrawingCanvas() {
                     width={800}
                     height={600}
                 />
-                <canvas className='canvas'
-                    ref={canvasRef}
-                    width={800}
-                    height={600}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onMouseMove={handleMouseMove}
-                />
+                <div className="currentCanvasLayer">
+                    <canvas className='canvas'
+                        ref={canvasRef}
+                        width={800}
+                        height={600}
+                        onMouseDown={handleMouseDown}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onMouseMove={handleMouseMove}
+                    />
+                </div>
             </div>
         </div>
         <div className="dc-vert-container" ref={historyHandler}>
             <h3>History of Paths</h3>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                redrawCanvas();
-            }}>
-                Redraw Paths
-            </button>
+            <div className="dc-vert-container historyButtons">
             <button onClick={() => {
                 const canvas = canvasRef.current;
                 if (!canvas) return;
@@ -673,63 +700,11 @@ function DrawingCanvas() {
             }}>
                 Redo Paths
             </button>
-            <ul>
-                {paths.current.map((path, index) => (
-                    <li key={index}>Path {index + 1}</li>
-                ))}
-            </ul>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "line"
-            }}>
-               Line Tool 
-            </button>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "shape"
-            }}>
-               Shape Tool 
-            </button>
+            </div>
         </div>
-        <div className="dc-hor-container" ref ={animationHandler}>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            clearCanvas();
-            
-        }}>
-            Clear Canvas
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            moveCanvasButton();
-            
-        }}
-            id='moveCanvasButton'>
-            Move Canvas
-            
-        </button>
+        <div className="dc-vert-container animationHandler" ref ={animationHandler}>
         <h3>Animation Handler</h3>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            saveFrame();
-        }}>
-            Save Frame
-        </button>
+        <div className="dc-hor-container animationButtons">
         <button onClick={() => {
             const canvas = canvasRef.current;
             if (!canvas) return;
@@ -778,21 +753,45 @@ function DrawingCanvas() {
         }}>
             Onion Off
         </button>
-        
-        <button onClick={() => {
-            // exportToGif();
-        }}>
-            Export To Gif
-        </button>
+        </div>
         </div>
         <button onClick={()=>{createLayer()}}>Create Layer</button>
         <div className='dc-vert-container' ref={framesHandler}></div>
         <div className='dc-vert-container' ref={layerHandler}></div>
-        <div className='dc-vert-container' ref={toolsHandler}>
-            <div className="colorSelector">
-                <p>Choose your colors:</p>
-                <div>
+        <div className='dc-vert-container tools-handler' ref={toolsHandler}>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "pen"
+            }}>
+               Pen Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "line"
+            }}>
+               Line Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "shape"
+                
+            }}>
+               Shape Tool 
+            </button>
+            <div className="colorInputContainer">
+                <div className="colorInput">
                     <input
+                    height="100px"
+                    width="100px"
                     ref={inputPrimary}
                     type="color"
                     id="primary-color"
@@ -802,10 +801,11 @@ function DrawingCanvas() {
                         Tool.colorPrimary = inputPrimary.current.value;
                     }}
                     />
-                    <label htmlFor="primary-color">Primary Color</label>
                 </div>
-                <div>
+                <div className="colorInput colorInputSecondary">
                     <input
+                    height="100px"
+                    width="100px"
                     ref={inputSecondary}
                     type="color"
                     id="secondary-color"
@@ -815,36 +815,13 @@ function DrawingCanvas() {
                         Tool.colorSecondary = inputSecondary.current.value;
                     }}
                     />
-                    <label htmlFor="secondary-color">Secondary Color</label>
                 </div>
             </div>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "pen"
-            }}>
-               Pen Tool 
-            </button>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "line"
-            }}>
-               Line Tool 
-            </button>
-            <button onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "shape"
-            }}>
-               Shape Tool 
-            </button>
+        </div>
+        <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
+            <div className="dc-vert-container">
+                <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3><FaCog id='fa-cog' /></button></div>
+            </div>
         </div>
     </div>
     );
