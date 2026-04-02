@@ -246,13 +246,12 @@ Steps To Change Layer:
             ctx.globalAlpha = 1.0; // Reset transparency
         }
 
+        
         function clearOnionSkin() {
             const canvas = canvasOnionRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
             onionSkinEnabled.current = false;
         }
 
