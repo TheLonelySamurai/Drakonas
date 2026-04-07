@@ -3,6 +3,9 @@ import StrokeSettings from "./StrokeSettings";
 import PosXY from "./PosXY";
 class Line extends Tool{
     public lineWidth = 1;
+    public lineCap : CanvasLineCap = "butt";
+    public opacity = 1;
+    public name = "Line";
     public temporaryPoints : PosXY[] = [];
     
     constructor(){
@@ -62,6 +65,7 @@ class Line extends Tool{
                 this.p = new Path2D();
                 ctx.lineWidth = this.lineWidth;
                 ctx.strokeStyle = Tool.colorPrimary;
+                ctx.globalAlpha = this.opacity;
                 this.p.moveTo(pos1.x, pos1.y);
                 this.p.lineTo(pos2.x, pos2.y);
                 
@@ -69,7 +73,7 @@ class Line extends Tool{
 
                 var strokeSet = new StrokeSettings();
                 strokeSet.strokeStyle = Tool.colorPrimary;
-                strokeSet.lineCap = "butt";
+                strokeSet.lineCap = this.lineCap;
                 strokeSet.lineWidth = this.lineWidth;
                 this.saveAction(strokeSet, this.p);
                 this.p = null;
@@ -78,6 +82,46 @@ class Line extends Tool{
                 this.actionFinished = 2;
             }
             
+        }
+    }
+    exportProperties(): JSON {
+        return JSON.parse(JSON.stringify({
+            0: {"name": "Line Width" ,
+                "type": {"type": "number", "min": 1, "max": 1000, "step": 1}},
+            1: {"name" : "Line Cap",
+                "type" : {"type": "select", "options": ["butt", "round", "square"]}},
+            2: {"name": "Opacity",
+                "type": {"type": "number", "min": 0, "max": 1, "step": 0.01}}
+        }));
+    }
+    updateProperty(propertyName: string, value: any): void {
+        switch(propertyName){
+            case "Line Width":
+                this.lineWidth = value;
+                break;
+            case "Line Cap":
+                this.lineCap = value;
+                break;
+            case "Opacity":
+                this.opacity = value;
+                break;
+            default:
+                break;
+        }
+    }
+    getProperty(propertyName: string): any{
+        switch(propertyName){
+            case "Line Width":
+                return this.lineWidth;
+                break;
+            case "Line Cap":
+                return this.lineCap;
+                break;
+            case "Opacity":
+                return this.opacity;
+                break;
+            default:
+                return null;
         }
     }
 }

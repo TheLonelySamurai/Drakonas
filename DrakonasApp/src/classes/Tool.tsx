@@ -6,6 +6,7 @@ abstract class Tool {
     public static lastPos: PosXY;
     public static canvas: HTMLCanvasElement;
     public static order : number = 0;
+    public name: string;
     public pos: PosXY;
     public p: Path2D;
     public static colorPrimary : string | CanvasGradient;
@@ -63,6 +64,14 @@ abstract class Tool {
         this.actions.clear();
         return temp;
     }
-
+    exportProperties(): JSON{
+        return JSON.parse(JSON.stringify({}));
+    }
+    updateProperty(propertyName: string, value: any){
+        // This function will be used to update the properties of the tool when they are changed in the UI
+    }
+    getProperty(propertyName: string): any{
+        // This function will be used to get the current value of a property when it is changed in the UI
+    }
 }
 export default Tool;

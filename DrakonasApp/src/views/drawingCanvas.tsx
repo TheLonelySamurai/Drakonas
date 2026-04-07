@@ -25,6 +25,8 @@ function DrawingCanvas() {
     const animationHandler = useRef<HTMLDivElement | null>(null);
     const toolsHandler = useRef<HTMLDivElement | null>(null);
     const toolPropertiesMenu = useRef<HTMLDivElement | null>(null);
+    const toolPropertiesMenuFormDiv = useRef<HTMLDivElement | null>(null);
+    const toolPropertiesStyle = useRef<HTMLStyleElement | null>(null);
     const layerHandler=useRef<HTMLDivElement | null>(null);
     //Color inputs
     const inputPrimary = useRef<HTMLInputElement | null>(null);
@@ -84,13 +86,14 @@ function DrawingCanvas() {
         
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
+        createToolPropertiesMenuForm();
         clearCanvas();
         clearOnionSkin();
         saveFrame();
         drawBackground();
+        moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
         const removeUndo = window.historyAPI.onUndo(() => undo());
         const removeRedo = window.historyAPI.onRedo(() => redo());
-        moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
         return () => {
             removeUndo();
             removeRedo();
@@ -254,144 +257,152 @@ function DrawingCanvas() {
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-    function clearCanvas() {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-    }
-
-    function redrawCanvas() {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        console.log("Redrawing canvas with paths: ", paths.current);
-        clearCanvas();
-        // console.log("PATHS + " +paths.current);
-        for(let i = 0; i < paths.current.length; i ++){
-            let map = paths.current[i];
-            // console.log(map);
-            map.forEach(function (value, key){
-                // console.log("KEY: " + key + " | VALUE: " + value)
-                if (value == null)return;
-                // console.log(key);
-                // console.log(value)
-                ctx.fillStyle = key.fillStyle;
-                ctx.strokeStyle = key.strokeStyle;
-                ctx.lineWidth = key.lineWidth;
-                ctx.lineCap  = key.lineCap;
-                ctx.stroke(value);
-            });
+    //Canvas related functions
+        function clearCanvas() {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-    }
+
+        function redrawCanvas() {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            console.log("Redrawing canvas with paths: ", paths.current);
+            clearCanvas();
+            // console.log("PATHS + " +paths.current);
+            for(let i = 0; i < paths.current.length; i ++){
+                let map = paths.current[i];
+                // console.log(map);
+                map.forEach(function (value, key){
+                    // console.log("KEY: " + key + " | VALUE: " + value)
+                    if (value == null)return;
+                    // console.log(key);
+                    // console.log(value)
+                    ctx.fillStyle = key.fillStyle;
+                    ctx.strokeStyle = key.strokeStyle;
+                    ctx.lineWidth = key.lineWidth;
+                    ctx.lineCap  = key.lineCap;
+                    if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+                    ctx.stroke(value);
+                });
+            }
+        }
     //Layers Functions
-    function createLayer(){
+        function createLayer(){
 
-        console.log("layer");
-        const layer=document.createElement('canvas');
-        layer.className="canvas";
-        layer.width=800;
-        layer.height=600;
-        layer.id=`Mainlayer-${canvasLayers.current.length}`;
-        layersDivRef.current.appendChild(layer);
-        addLayerPreview();
-        canvasLayers.current.push([]);
-    }
-    function addLayerPreview(){
-        const layerPreviewContainer = document.createElement('div');
-            const layerLabel = document.createElement('div');
-            layerLabel.textContent = `Layer ${canvasLayers.current.length}`;
-            layerLabel.style.textAlign = 'center';
-            layerLabel.style.fontSize = '12px';
-            layerLabel.style.marginBottom = '4px';
-            layerPreviewContainer.appendChild(layerLabel);
-            const layerDeleteButton = document.createElement('button');
-            layerDeleteButton.textContent = 'X';
-            layerDeleteButton.style.position = 'absolute';
-            layerDeleteButton.style.top = '0';
-            layerDeleteButton.style.right = '0';
-            layerDeleteButton.style.background = 'red';
-            layerDeleteButton.style.color = 'white';
-            layerDeleteButton.style.border = 'none';
-            layerDeleteButton.addEventListener('click', () => {
-                console.log("Button to be worked on");
-                // removeLayer(currentLayerIndex.current);
-            });
-            layerPreviewContainer.appendChild(layerDeleteButton);
-            const layerCanvasButton = document.createElement('button');
-            const layerCanvas = document.createElement('canvas');
-            layerCanvas.width = 800;
-            layerCanvas.height = 600;
-            const ctx = layerCanvas.getContext('2d');
-            if (!ctx) return;
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'black';
-            ctx.lineCap = 'round';
-            //resize the preview canvas to be smaller
-            layerCanvas.style.width = '160px';
-            layerCanvas.style.height = '120px';
-            layerCanvasButton.appendChild(layerCanvas);
-            var index=canvasLayers.current.length-1;
-            layerCanvasButton.addEventListener('click', () => {
-                switchLayers(index);
-            });
-            layerPreviewContainer.style.position = 'relative';
-            layerPreviewContainer.appendChild(layerCanvasButton);
-            layerPreviewContainer.id = `layer-${currentLayerIndex.current}`;
-            layerPreviewContainer.className = 'layer';
-            //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
-            const layerHolder = layerHandler.current;
-            if (!layerHolder) return;
-            layerHolder.appendChild(layerPreviewContainer);
-
-    }
-    function switchLayers(index:number){
-        canvasLayers.current[currentLayerIndex.current]=paths.current;
-        clearCanvas();
-        const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas')
-        for(let i=0;i<canvasLayerElements.length;i++){
-            console.log(i, index, currentLayerIndex);
-            if(canvasLayerElements[i].id==`Mainlayer-${currentLayerIndex.current+1}`){
-                console.log(`Mainlayer-${currentLayerIndex.current+1}`);
-    
-                const canvas=canvasLayerElements[i];
-               const ctx=canvasLayerElements[i].getContext('2d');
-               ctx.clearRect(0, 0, canvas.width, canvas.height);
-                for (let i=0;i<paths.current.length;i++){
-                     let map = paths.current[i];
-            // console.log(map);
-                    map.forEach(function (value, key){
-                        if (value == null)return;
-                        ctx.fillStyle = key.fillStyle;
-                        ctx.strokeStyle = key.strokeStyle;
-                        ctx.lineWidth = key.lineWidth;
-                        ctx.lineCap  = key.lineCap;
-                        ctx.stroke(value);
-                    });
-                }
-                continue;
-            }
-            if (canvasLayerElements[i].id==`Mainlayer-${index+1}`){
-                console.log(""+canvasLayerElements[i].id+" Index not console index")
-                const canvas=canvasLayerElements[i];
-               const ctx=canvasLayerElements[i].getContext('2d');
-               ctx.clearRect(0, 0, canvas.width, canvas.height);
-            }
+            console.log("layer");
+            const layer=document.createElement('canvas');
+            layer.className="canvas";
+            layer.width=800;
+            layer.height=600;
+            layer.id=`Mainlayer-${canvasLayers.current.length}`;
+            layersDivRef.current.appendChild(layer);
+            addLayerPreview();
+            canvasLayers.current.push([]);
         }
+        function addLayerPreview(){
+            const layerPreviewContainer = document.createElement('div');
+                const layerLabel = document.createElement('div');
+                layerLabel.textContent = `Layer ${canvasLayers.current.length}`;
+                layerLabel.style.textAlign = 'center';
+                layerLabel.style.fontSize = '12px';
+                layerLabel.style.marginBottom = '4px';
+                layerPreviewContainer.appendChild(layerLabel);
+                const layerDeleteButton = document.createElement('button');
+                layerDeleteButton.textContent = 'X';
+                layerDeleteButton.style.position = 'absolute';
+                layerDeleteButton.style.top = '0';
+                layerDeleteButton.style.right = '0';
+                layerDeleteButton.style.background = 'red';
+                layerDeleteButton.style.color = 'white';
+                layerDeleteButton.style.border = 'none';
+                layerDeleteButton.addEventListener('click', () => {
+                    console.log("Button to be worked on");
+                    // removeLayer(currentLayerIndex.current);
+                });
+                layerPreviewContainer.appendChild(layerDeleteButton);
+                const layerCanvasButton = document.createElement('button');
+                const layerCanvas = document.createElement('canvas');
+                layerCanvas.width = 800;
+                layerCanvas.height = 600;
+                const ctx = layerCanvas.getContext('2d');
+                if (!ctx) return;
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
+                ctx.lineWidth = 1;
+                ctx.strokeStyle = 'black';
+                ctx.lineCap = 'round';
+                //resize the preview canvas to be smaller
+                layerCanvas.style.width = '160px';
+                layerCanvas.style.height = '120px';
+                layerCanvasButton.appendChild(layerCanvas);
+                var index=canvasLayers.current.length-1;
+                layerCanvasButton.addEventListener('click', () => {
+                    switchLayers(index);
+                });
+                layerPreviewContainer.style.position = 'relative';
+                layerPreviewContainer.appendChild(layerCanvasButton);
+                layerPreviewContainer.id = `layer-${currentLayerIndex.current}`;
+                layerPreviewContainer.className = 'layer';
+                //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
+                const layerHolder = layerHandler.current;
+                if (!layerHolder) return;
+                layerHolder.appendChild(layerPreviewContainer);
+
+        }
+        function switchLayers(index:number){
+            canvasLayers.current[currentLayerIndex.current]=paths.current;
+            clearCanvas();
+            const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas')
+            for(let i=0;i<canvasLayerElements.length;i++){
+                console.log(i, index, currentLayerIndex);
+                if(canvasLayerElements[i].id==`Mainlayer-${currentLayerIndex.current+1}`){
+                    console.log(`Mainlayer-${currentLayerIndex.current+1}`);
         
-        currentLayerIndex.current=index;
-        paths.current=canvasLayers.current[index]
-        if(paths.current==null){
-            paths.current=[];
+                    const canvas=canvasLayerElements[i];
+                const ctx=canvasLayerElements[i].getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    for (let i=0;i<paths.current.length;i++){
+                        let map = paths.current[i];
+                // console.log(map);
+                        map.forEach(function (value, key){
+                            if (value == null)return;
+                            ctx.fillStyle = key.fillStyle;
+                            ctx.strokeStyle = key.strokeStyle;
+                            ctx.lineWidth = key.lineWidth;
+                            ctx.lineCap  = key.lineCap;
+                            ctx.stroke(value);
+                        });
+                    }
+                    continue;
+                }
+                if (canvasLayerElements[i].id==`Mainlayer-${index+1}`){
+                    console.log(""+canvasLayerElements[i].id+" Index not console index")
+                    const canvas=canvasLayerElements[i];
+                const ctx=canvasLayerElements[i].getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+            
+            currentLayerIndex.current=index;
+            paths.current=canvasLayers.current[index]
+            if(paths.current==null){
+                paths.current=[];
+            }
+            console.log(paths.current);
+            redrawCanvas();
         }
-        console.log(paths.current);
-        redrawCanvas();
-    }
-    function moveLayers(){
-
-    }
+        function deleteLayer(index:number){
+            //Remove the layer from the canvasLayers array
+        }
+        function deleteLayerPreview(index:number){ 
+            //Remove the layer preview from the layer handler
+        }
+        function moveLayers(){
+            //Move layers up and down in the layer stack, this will change the order they are drawn in which will change how they overlap with each other
+        }
 /*
     // function exportToGif(){
     //     console.log("Exporting to GIF with frames: ", frames.current.length);
@@ -433,7 +444,7 @@ function DrawingCanvas() {
 */
     
     
-    //Mouse functions
+//Mouse functions
     function getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
         
@@ -511,7 +522,8 @@ function DrawingCanvas() {
             undonePaths.current = []
         }
     }
-    //Mouse moving canvas functions
+//Mouse moving canvas functions
+// These functions are in the space that the canvas is contained within
     function getMousePosMoveCanvas(e: React.MouseEvent<HTMLDivElement>) {
         const rect = e.currentTarget.getBoundingClientRect();
         return {
@@ -624,7 +636,7 @@ function DrawingCanvas() {
         }
         Tool.scale = currentScale.current;
     }
-    //undo redo
+//undo redo
     function undo(){
         const lastPath = paths.current.pop();
         if (lastPath) {
@@ -641,7 +653,12 @@ function DrawingCanvas() {
         }
         console.log("REDO")
     }
-    
+// Tool Functions
+    function swapTool(newTool: string){
+        toolMode.current = newTool;
+        createToolPropertiesMenuForm();
+    }
+//CSS related functions
     function moveCanvasButton(){
         if (isMovingCanvas.current) {
             isMovingCanvas.current = false;
@@ -651,7 +668,6 @@ function DrawingCanvas() {
             document.querySelector('#moveCanvasButton').textContent = "Stop Moving Canvas";
         }
     }
-    //CSS related functions
     function openCloseToolProperties(){
         const menu = toolPropertiesMenu.current;
         if (!menu) return;
@@ -666,7 +682,110 @@ function DrawingCanvas() {
             menu.classList.add('closed');
         }   
     }
-
+    //Tool Properties Menu
+    function createToolPropertiesMenuForm(){
+        const menuHolder = toolPropertiesMenuFormDiv.current;
+        if (!menuHolder) return;
+        menuHolder.innerHTML = ''; // Clear previous menu
+        const form = document.createElement('form');
+        form.className = "tool-properties-form";
+        //Add inputs to the form based on the current tool
+        const tool = tools.get(toolMode.current);
+        /* tool.exportProperties() returns JSON in the following format:
+            {
+                <insert order number>: <Property Name> : <input type>,
+            }
+                where the input type can be "color", "number", "select" (for dropdowns), or "checkbox"
+                "select" input types also include an array of options for the dropdown menu in the following format:
+            {
+                <insert order number>: <Property Name> : {
+                    type: "select",
+                    options: [<option 1>, <option 2>, ...]
+                }
+            }
+            
+        */
+        if (!tool) return;
+        var header = document.createElement('h3');
+        header.textContent = `${tool.name} Properties`;
+        form.appendChild(header);
+        const properties = tool.exportProperties();
+        const propertyKeys = Object.keys(properties).sort((a, b) => parseInt(a) - parseInt(b));
+        propertyKeys.forEach(key => {
+            const property = properties[key];
+            const type = property.type;
+            console.log("Creating input for property: ", property, "From key: ", key);
+            const label = document.createElement('label');
+            label.textContent = property.name;
+            form.appendChild(label);
+            let input : HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement = document.createElement('input');
+            switch (type.type) {
+                case "color":
+                    input = document.createElement('input');
+                    input.type = 'color';
+                    input.value = "#000";
+                    if (type.default !== undefined) input.value = type.default;
+                    input.addEventListener('change', () => {
+                        tool.updateProperty(property.name, input.value);
+                    });
+                    break;
+                case "number":
+                    input = document.createElement('input');
+                    input.type = 'number';
+                    input.addEventListener('change', () => {
+                        tool.updateProperty(property.name, input.value);
+                    });
+                    if (type.min !== undefined) input.min = type.min;
+                    if (type.max !== undefined) input.max = type.max;
+                    if (type.step !== undefined) input.step = type.step;
+                    if(type.default !== undefined) input.defaultValue = type.default;
+                    else input.defaultValue = tool.getProperty(property.name);
+                    break;
+                case "select":
+                    input = document.createElement('select');
+                    type.options.forEach((option: string) => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option;
+                        optionElement.textContent = option;
+                        if (option === tool.getProperty(property.name)) {
+                            optionElement.selected = true;
+                        }
+                        input.appendChild(optionElement);
+                    });
+                    input.addEventListener('change', () => {
+                        tool.updateProperty(property.name, input.value);
+                    });
+                    break;
+                case "checkbox":
+                    input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.checked = type.defaultValue || false;
+                    input.addEventListener('change', () => {
+                        tool.updateProperty(property.name, input.checked);
+                    });
+                    break;
+                default:
+                    console.warn(`Unknown property type: ${property.type}`);
+            }
+            form.appendChild(input);
+        });
+        //Fade In animation of the form
+        form.style.animation = 'fadeIn 0.3s ease-out forwards';
+        //Dynamic height of the menu based on the number of properties (max height of 400px with scroll)
+        const menuHeight = Math.max(200, propertyKeys.length * 2 * 60 + 200);
+        const menuContainer = toolPropertiesMenu.current;
+        if (!menuContainer) {
+            menuHolder.appendChild(form);
+            return;
+        }
+        
+        var r = document.querySelector(':root');
+        r.style.setProperty('--menu-height', `${menuHeight}px`);
+        menuContainer.style.height = `var(--menu-height)`;
+        menuContainer.style.overflowY = (propertyKeys.length * 60 + 200) > 500 ? 'scroll' : 'hidden';
+        
+        menuHolder.appendChild(form);
+    }
 
     return (
     <div className="drawingCanvasContainer">
@@ -788,7 +907,7 @@ function DrawingCanvas() {
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
-                toolMode.current = "pen"
+                swapTool("pen");
             }}>
                Pen Tool 
             </button>
@@ -797,7 +916,7 @@ function DrawingCanvas() {
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
-                toolMode.current = "line"
+                swapTool("line");
             }}>
                Line Tool 
             </button>
@@ -806,8 +925,7 @@ function DrawingCanvas() {
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
-                toolMode.current = "shape"
-                
+                swapTool("shape");
             }}>
                Shape Tool 
             </button>
@@ -845,6 +963,8 @@ function DrawingCanvas() {
         <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
                 <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3><FaCog id='fa-cog' /></button></div>
+                <div className="tool-properties-content" ref={toolPropertiesMenuFormDiv}>
+                </div>
             </div>
         </div>
     </div>

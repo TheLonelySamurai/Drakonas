@@ -13,9 +13,11 @@ function Navigation( {name, url, id, conditional}:{name:string, url:string, id?:
         if (conditional != null){ 
             var user = await UserController.retrieveUser();
             if (user == "null"){
-                goTo(conditional);
+                goTo(url);
                 return;
             }
+            goTo(conditional);
+            return;
         }
         goTo(url);
     }

@@ -126,10 +126,10 @@
 }
 .tool-properties-menu{
     position: absolute;
-    bottom: -400px;
+    bottom: calc(-1*(var(--menu-height) - 100px));
     left: 0;
     width: calc(30vw + 2px);
-    height: 500px;
+    height: var(--menu-height);
     background-color: var(--bg-dark2);
     border-top: 4px solid var(--border);
     box-shadow: 0px -4px 8px rgba(0, 0, 0, 0.2);
@@ -141,6 +141,7 @@
 }
 .tool-properties-menu.open{
     animation: slideUp 0.3s ease-out forwards;
+    transition: height 0.3s ease-out;
 }
 .tool-properties-menu.closed{
     animation: slideDown 0.3s ease-out forwards;
@@ -162,18 +163,51 @@
 .tool-properties-menu.closed #fa-cog{
     animation: spinRev 1.2s cubic-bezier(.24,-0.41,.61,1.77) forwards;
 }
+.tool-properties-form{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+}
+.tool-properties-form label{
+    color: var(--text-light);
+    font-size: 16px;
+}
+.tool-properties-form input{
+    border-radius: 8px;
+    border: 2px solid var(--text-light);
+    padding: 8px;
+    width: 50px;
+    background-color: transparent;
+    text-align: center;
+    color: var(--text-light);
+}
+.tool-properties-form select{
+    border-radius: 8px;
+    border: 2px solid var(--text-light);
+    padding: 8px;
+    width: 70px;
+    background-color: transparent;
+    text-align: center;
+    color: var(--text-light);
+}
+.tool-properties-form option{
+    background-color: var(--bg-dark2);
+    color: var(--text-light);
+}
 @keyframes slideUp {
     from {
         transform: translateY(0%);
     }
     to {
-        transform: translateY(-50%);
+        transform: translateY(calc(-1 * (var(--menu-height)) + 100px));
     }
 }
 
 @keyframes slideDown {
     from {
-        transform: translateY(-50%);
+        transform: translateY(calc(-1 * (var(--menu-height)) + 100px));
     }
     to {
         transform: translateY(0%);
@@ -195,6 +229,22 @@
     }
     to {
         transform: rotate(0deg);
+    }
+}
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
     }
 }
 .div-like-clickable-button{
