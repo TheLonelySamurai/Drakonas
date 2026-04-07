@@ -34,6 +34,7 @@ function Workshop(){
                 <div className="large-part border-top border-left">
                     <div className="section-object">Layers</div>
                     
+                    <div className="layers-holder"></div>
                 </div>
             </div>
         </div>
