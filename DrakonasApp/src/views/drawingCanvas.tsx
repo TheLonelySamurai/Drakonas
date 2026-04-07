@@ -8,6 +8,7 @@ import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
 import Shape from "../classes/ShapeTool";
+import Eraser from "../classes/EraserTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
@@ -48,6 +49,7 @@ Steps To Change Layer:
     tools.set("pen", new Pen());
     tools.set("line", new Line());
     tools.set("shape",new Shape());
+    tools.set("eraser",new Eraser());
     //Deprecated 
     const temporaryPoints = useRef([]);
     const isDrawing = useRef(false);
@@ -669,6 +671,15 @@ Steps To Change Layer:
                 toolMode.current = "line"
             }}>
                Line Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "eraser"
+            }}>
+               Eraser Tool 
             </button>
             <button className="toolbar-button" onClick={() => {
                 const canvas = canvasRef.current;
