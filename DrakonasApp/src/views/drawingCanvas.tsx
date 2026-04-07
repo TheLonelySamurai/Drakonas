@@ -251,6 +251,8 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
     function clearCanvas() {
         const canvas = canvasRef.current;
@@ -588,7 +590,9 @@ function DrawingCanvas() {
     }
     function scaleCanvas(scaleFactor: number) {
         const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
-        const canvases = canvasContainer.querySelectorAll('canvas');
+        var canvases = canvasContainer.querySelectorAll('canvas');
+        
+        
         currentScale.current *= scaleFactor;
         canvases.forEach(canvas => {
             const rect = canvas.getBoundingClientRect();
@@ -598,6 +602,26 @@ function DrawingCanvas() {
             const offsetY = (centerY - window.innerHeight / 2) * (scaleFactor - 1);
             canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentScale.current})`;
         });
+        
+        if (layersDivRef.current != null) {
+            const canvasLayers = layersDivRef.current.querySelectorAll('canvas');
+            canvasLayers.forEach(canvas => {
+                const rect = canvas.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const offsetX = (centerX - window.innerWidth / 2) * (scaleFactor - 1);
+                const offsetY = (centerY - window.innerHeight / 2) * (scaleFactor - 1);
+                canvas.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentScale.current})`;
+            });
+        }
+        if (canvasRef.current != null) {
+            const rect = canvasRef.current.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const offsetX = (centerX - window.innerWidth / 2) * (scaleFactor - 1);
+            const offsetY = (centerY - window.innerHeight / 2) * (scaleFactor - 1);
+            canvasRef.current.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${currentScale.current})`;
+        }
         Tool.scale = currentScale.current;
     }
     //undo redo
