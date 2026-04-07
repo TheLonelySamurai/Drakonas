@@ -658,7 +658,7 @@ function DrawingCanvas() {
                     width={800}
                     height={600}
                 />
-                <div className="canvasLayers">
+                <div className="canvasLayers" ref={layersDivRef}>
 
                 </div>
                 <canvas className='canvas'
