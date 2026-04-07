@@ -35,7 +35,6 @@ class ShapeTool extends Tool{
             this.isShift=true;
         }
         const ctx = super.getCanvas();
-        console.log("WILL")
         if (ctx == null) return;
         Tool.lastPos = this.pos;
     }

@@ -9,6 +9,7 @@ import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
 import Shape from "../classes/ShapeTool";
 import Eraser from "../classes/EraserTool";
+import Rotate from "../classes/RotateTool"
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
@@ -37,6 +38,7 @@ function DrawingCanvas() {
     tools.set("line", new Line());
     tools.set("shape",new Shape());
     tools.set("eraser",new Eraser());
+    tools.set("rotate",new Rotate())
     //Deprecated 
     const temporaryPoints = useRef([]);
     const isDrawing = useRef(false);
@@ -821,6 +823,16 @@ function DrawingCanvas() {
                 
             }}>
                Shape Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "rotate"
+                
+            }}>
+               Rotate Tool 
             </button>
             <div className="colorInputContainer">
                 <div className="colorInput">
