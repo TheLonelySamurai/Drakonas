@@ -11,13 +11,14 @@ import Shape from "../classes/ShapeTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
+    //const refName = useRef<Type | null>(initialValue);
     const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const canvasOnionRef = useRef<HTMLCanvasElement | null>(null);
     //Layers
     const layersDivRef = useRef<HTMLDivElement | null>(null);
     const currentLayerDivRef = useRef<HTMLDivElement | null>(null);
-    const canvasLayers = useRef<Map<StrokeSettings,Path2D>[][]>([[]]);
+    const canvasLayers = useRef<Map<StrokeSettings,Path2D>[][]>([[]]);// Array of paths for each layer, each path is a map of stroke settings and the path itself
     const currentLayerIndex=useRef(0);
     //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
@@ -50,7 +51,7 @@ function DrawingCanvas() {
     //Undo Redo and Frames
     const paths = useRef<Map<StrokeSettings,Path2D>[]>([]);
     const undonePaths = useRef<Map<StrokeSettings,Path2D>[]>([]);
-    const frames = useRef<Map<StrokeSettings, Path2D>[][]>([]); // Array of frames, each frame is an array of paths
+    const frames = useRef<Map<StrokeSettings, Path2D>[][][]>([]); // Array of frames, each frame is an array an array of paths
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
@@ -76,7 +77,10 @@ function DrawingCanvas() {
         const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
         if (toolsHolder){
             toolsHolder.appendChild(toolsHandler.current);
-            toolsHolder.appendChild(toolPropertiesMenu.current);
+        }
+        const workshopHolder = document.querySelector('.workshop') as HTMLElement;
+        if (workshopHolder){
+            workshopHolder.appendChild(toolPropertiesMenu.current);
         }
         const canvas = canvasRef.current;
         Tool.canvas = canvas;
@@ -91,6 +95,8 @@ function DrawingCanvas() {
         clearOnionSkin();
         saveFrame();
         drawBackground();
+        createLayer();
+        // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
         moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
         const removeUndo = window.historyAPI.onUndo(() => undo());
         const removeRedo = window.historyAPI.onRedo(() => redo());
@@ -102,7 +108,7 @@ function DrawingCanvas() {
     //Frame Related
         function saveFrame() {
             // Save the current paths into the current frame
-
+            frames.current[currentFrameIndex.current] = [...canvasLayers.current];
             // Update the preview for this frame
             addPreviewFrameToFramesHandler(currentFrameIndex.current);
 
@@ -116,15 +122,23 @@ function DrawingCanvas() {
                 clearOnionSkin();
                 loadOnionSkin(currentFrameIndex.current - 1);
             }
-
             paths.current = []; // Clear current paths for the new frame
+            const canvasLayersLength = canvasLayers.current.length;
+            canvasLayers.current = []; // Clear current layers
+            for (let i = 0; i < canvasLayersLength; i++){
+                canvasLayers.current.push([]); // Add empty layers for the new frame
+            }
+            scaleCanvas(1);//Ensure the layer canvases are the correct size
+            redrawAllLayers();
+            saveFrame(); // Save the new frame (which is currently empty)
         }
 
         function loadFrame(index: number) {
             if (index < 0 || index >= frames.current.length) return;
             currentFrameIndex.current = index;
-
-            redrawCanvas();
+            canvasLayers.current = [...frames.current[index]]; // Load the paths for the selected frame
+            paths.current = canvasLayers.current[currentLayerIndex.current] || [];
+            redrawAllLayers();
             if(onionSkinEnabled.current){
                 clearOnionSkin();
                 loadOnionSkin(index - 1);
@@ -199,13 +213,7 @@ function DrawingCanvas() {
             const frameCanvas = document.createElement('canvas');
             frameCanvas.width = 800;
             frameCanvas.height = 600;
-            const ctx = frameCanvas.getContext('2d');
-            if (!ctx) return;
-            ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, frameCanvas.width, frameCanvas.height);
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'black';
-            ctx.lineCap = 'round';
+            drawFromAllLayers(frameCanvas, frames.current[frameIndex]);
             //resize the preview canvas to be smaller
             frameCanvas.style.width = '160px';
             frameCanvas.style.height = '120px';
@@ -234,11 +242,9 @@ function DrawingCanvas() {
             onionSkinEnabled.current = true;
             if (index < 0 || index >= frames.current.length) return;
             const canvas = canvasOnionRef.current;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            ctx.globalAlpha = 0.5; // Set transparency for onion skin effect
-            
-            ctx.globalAlpha = 1.0; // Reset transparency
+            if (!canvas) return;
+            canvas.style.opacity = '0.5';
+            drawFromAllLayers(canvas, frames.current[index]);
         }
 
         
@@ -264,16 +270,84 @@ function DrawingCanvas() {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-
+        function drawFromAllLayers(canvas : HTMLCanvasElement, layers: Map<StrokeSettings, Path2D>[][]){
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            for (let i = 0; i < layers.length; i++){
+                const pathsToDraw = layers[i];
+                for(let i = 0; i < pathsToDraw.length; i ++){
+                    let map = pathsToDraw[i];
+                    // console.log(map);
+                    map.forEach(function (value, key){
+                        // console.log("KEY: " + key + " | VALUE: " + value)
+                        if (value == null)return;
+                        // console.log(key);
+                        // console.log(value)
+                        ctx.fillStyle = key.fillStyle;
+                        ctx.strokeStyle = key.strokeStyle;
+                        ctx.lineWidth = key.lineWidth;
+                        ctx.lineCap  = key.lineCap;
+                        if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+                        ctx.stroke(value);
+                    });
+                }
+            }
+        }
+        function redrawAllLayers(){
+            //When changing frames, the frames data contains the data for all layers, so we need to redraw all layers for the current frame
+            // This function occurs when canvasLayers is already updated with the new frame data, so we just need to redraw all layers in canvasLayers
+            // The format for layers is odd, as we have a top layer canvas that is the current layer we are working with, and all of the other layers that are behind it
+           
+            //Redraw all of the other layers on their respective canvases
+            if (!layersDivRef.current)return;
+            const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas');
+            //Each .canvas element corresponds to a layer, the index of the .canvas element corresponds to the index of the layer in canvasLayers, so we can use that to redraw each layer on its respective canvas
+            //In the cases that the number of layers from previous frames is not up to current, we just skip drawing those layers as they are empty and do not need to be drawn
+            //This shouldn't have issues for when there are MORE layers as the  
+            for(let i = 0; i < canvasLayerElements.length; i ++){''
+                const layerCanvas = canvasLayerElements[i] as HTMLCanvasElement;
+                const layerPaths = canvasLayers.current[i];
+                //Clear the layer canvas before redrawing
+                const ctx = layerCanvas.getContext('2d');
+                if (!ctx) return;
+                ctx.clearRect(0, 0, layerCanvas.width, layerCanvas.height);
+                drawAnyCanvas(layerCanvas, layerPaths);
+            }
+            switchLayers(currentLayerIndex.current);
+        }
         function redrawCanvas() {
             const canvas = canvasRef.current;
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
+            if (!ctx) return;
             console.log("Redrawing canvas with paths: ", paths.current);
             clearCanvas();
             // console.log("PATHS + " +paths.current);
             for(let i = 0; i < paths.current.length; i ++){
                 let map = paths.current[i];
+                // console.log(map);
+                map.forEach(function (value, key){
+                    // console.log("KEY: " + key + " | VALUE: " + value)
+                    if (value == null)return;
+                    // console.log(key);
+                    // console.log(value)
+                    ctx.fillStyle = key.fillStyle;
+                    ctx.strokeStyle = key.strokeStyle;
+                    ctx.lineWidth = key.lineWidth;
+                    ctx.lineCap  = key.lineCap;
+                    if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+                    ctx.stroke(value);
+                });
+            }
+        }
+        function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Path2D>[]){
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            console.log("Redrawing canvas with paths: ", paths.current);
+            clearCanvas();
+            // console.log("PATHS + " +paths.current);
+            for(let i = 0; i < pathsToDraw.length; i ++){
+                let map = pathsToDraw[i];
                 // console.log(map);
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
@@ -298,14 +372,20 @@ function DrawingCanvas() {
             layer.width=800;
             layer.height=600;
             layer.id=`Mainlayer-${canvasLayers.current.length}`;
+            if (!layersDivRef.current)return;
             layersDivRef.current.appendChild(layer);
             addLayerPreview();
             canvasLayers.current.push([]);
         }
-        function addLayerPreview(){
+        function saveLayer(){
+            //Save the current layer paths into the canvasLayers array
+            canvasLayers.current[currentLayerIndex.current] = [...paths.current];
+        }
+        function addLayerPreview(index?:number){
+            const i = index !== undefined ? index : canvasLayers.current.length - 1;
             const layerPreviewContainer = document.createElement('div');
                 const layerLabel = document.createElement('div');
-                layerLabel.textContent = `Layer ${canvasLayers.current.length}`;
+                layerLabel.textContent = `Layer ${i+1}`;
                 layerLabel.style.textAlign = 'center';
                 layerLabel.style.fontSize = '12px';
                 layerLabel.style.marginBottom = '4px';
@@ -338,21 +418,21 @@ function DrawingCanvas() {
                 layerCanvas.style.width = '160px';
                 layerCanvas.style.height = '120px';
                 layerCanvasButton.appendChild(layerCanvas);
-                var index=canvasLayers.current.length-1;
                 layerCanvasButton.addEventListener('click', () => {
-                    switchLayers(index);
+                    switchLayers(i);
                 });
                 layerPreviewContainer.style.position = 'relative';
                 layerPreviewContainer.appendChild(layerCanvasButton);
-                layerPreviewContainer.id = `layer-${currentLayerIndex.current}`;
+                layerPreviewContainer.id = `layer-${i}`;
                 layerPreviewContainer.className = 'layer';
                 //Make sure the order of the frame previews is correct by inserting the new preview at the correct index
-                const layerHolder = layerHandler.current;
+                const layerHolder = layerHandler.current?.getElementsByClassName('layerHolder')[0];
                 if (!layerHolder) return;
                 layerHolder.appendChild(layerPreviewContainer);
 
         }
         function switchLayers(index:number){
+            scaleCanvas(1);//Ensure the layer canvases are the correct size
             canvasLayers.current[currentLayerIndex.current]=paths.current;
             clearCanvas();
             const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas')
@@ -396,9 +476,41 @@ function DrawingCanvas() {
         }
         function deleteLayer(index:number){
             //Remove the layer from the canvasLayers array
+            canvasLayers.current.splice(index, 1);
+            //Remove the layer then from all frames in the frames array
+            frames.current.forEach(frame => {
+                frame.splice(index, 1);
+            });
+            //Remove the layer canvas from the layers div
+            const canvasLayerElements=layersDivRef.current?.querySelectorAll('.canvas');
+            canvasLayerElements?.forEach((canvas) => {
+                if (canvas.id === `Mainlayer-${index+1}`) {
+                    layersDivRef.current?.removeChild(canvas);
+                }
+            });
+            //Finally, remove the layer preview from the layer handler
+            deleteLayerPreview(index);
+            //Ensure the current layer index is updated accordingly and the correct layer is displayed after deletion
+            if (currentLayerIndex.current >= canvasLayers.current.length) {
+                currentLayerIndex.current = Math.max(0, canvasLayers.current.length - 1);
+            }
+            switchLayers(currentLayerIndex.current);
         }
         function deleteLayerPreview(index:number){ 
-            //Remove the layer preview from the layer handler
+            //This function actually removes ALL layer previews and redraws them, 
+            //this is because the layer previews need to be updated after a layer 
+            //is removed to ensure the correct layer corresponds to the correct preview, 
+            //so it is easier to just redraw them all with the correct information rather 
+            //than trying to just remove one preview and update the rest
+            const handler = layerHandler.current;
+            if (!handler) return;
+            //This function happens AFTER deleteLayer, so the layer at index has already been removed from canvasLayers and frames, so we just need to redraw the previews for the remaining layers
+            const layerHolder = handler.querySelector('.layerHolder');
+            if (!layerHolder) return;
+            layerHolder.innerHTML = '';
+            for (let i = 0; i < canvasLayers.current.length; i++){
+                addLayerPreview(i);
+            }
         }
         function moveLayers(){
             //Move layers up and down in the layer stack, this will change the order they are drawn in which will change how they overlap with each other
@@ -476,6 +588,7 @@ function DrawingCanvas() {
             // Save the frame after finishing a action
             paths.current.push(tool.exportActionMap());
             saveFrame(); 
+            saveLayer();
             tool.actionFinished = 0;
             undonePaths.current = []
         }
@@ -503,6 +616,7 @@ function DrawingCanvas() {
             // Save the frame after finishing a action
             paths.current.push(tool.exportActionMap());
             saveFrame(); 
+            saveLayer();
             tool.actionFinished = 0;
             undonePaths.current = []
         }
@@ -518,6 +632,7 @@ function DrawingCanvas() {
             // Save the frame after finishing a action
             paths.current.push(tool.exportActionMap());
             saveFrame(); 
+            saveLayer();
             tool.actionFinished = 0;
             undonePaths.current = []
         }
@@ -636,6 +751,57 @@ function DrawingCanvas() {
         }
         Tool.scale = currentScale.current;
     }
+    // rotate Function 
+    /* 
+        1. Clear the current canvas (its only one layer so canvasRef.current)
+        2. Use the canvas context's transform function to rotate the canvas 
+                by the desired angle 
+                (this will rotate all future drawings on the canvas, 
+                so we need to redraw the existing paths after this)
+        3. Use the redrawCanvas function to redraw all existing paths 
+                onto the now rotated canvas
+        4. Rotate the canvas context back to normal by applying the inverse
+                of the rotation transform 
+                (this is necessary to ensure that future drawings 
+                are not rotated by the same angle, we only want to 
+                rotate the existing paths, not future ones)
+    */
+    // function resizeDrawingApp() {
+    //     const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
+    //     const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
+    //     const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
+    //     // Resize the drawing app to fit inside the canvas holder, which has viewport based sizing
+    //     const resizeObserver = new ResizeObserver(() => {
+    //         const holderRect = canvasHolder.getBoundingClientRect();
+    //         drawingApp.style.width = `${holderRect.width}px`;
+    //         drawingApp.style.height = `${holderRect.height}px`;
+    //     });
+    //     resizeObserver.observe(canvasHolder);
+    //     // Then resize the canvas to fit inside the drawing app, which is now sized to the canvas holder
+    //     // This WILL (not yet) resizes the scale of the canvases, not the ratio of them.
+    //     const canvasResizeObserver = new ResizeObserver(() => {
+    //         const appRect = drawingApp.getBoundingClientRect();
+    //         scaleCanvas(1); // Reset scale to 1 before resizing
+    //         canvasContainer.style.transform = `translate(0px, 0px)`;
+    //         currentScale.current = 1;
+    //         if (canvasRef.current) {
+    //             canvasRef.current.width = appRect.width;
+    //             canvasRef.current.height = appRect.height;
+    //         }
+    //         if (backgroundCanvasRef.current) {
+    //             backgroundCanvasRef.current.width = appRect.width;
+    //             backgroundCanvasRef.current.height = appRect.height;
+    //             drawBackground();
+    //         }
+    //         if (canvasOnionRef.current) {
+    //             canvasOnionRef.current.width = appRect.width;
+    //             canvasOnionRef.current.height = appRect.height;
+    //         } 
+    //     });
+    //     canvasResizeObserver.observe(drawingApp);
+    //     scaleCanvas(0.08); // Initial scale to fit the canvas inside the drawing app
+
+    // }
 //undo redo
     function undo(){
         const lastPath = paths.current.pop();
@@ -671,7 +837,6 @@ function DrawingCanvas() {
     function openCloseToolProperties(){
         const menu = toolPropertiesMenu.current;
         if (!menu) return;
-        console.log("Opening/Closing Tool Properties Menu");
         console.log(menu.classList);
         if (menu.classList.contains('closed')){
             menu.classList.remove('closed');
@@ -898,9 +1063,20 @@ function DrawingCanvas() {
         </button>
         </div>
         </div>
-        <button onClick={()=>{createLayer()}}>Create Layer</button>
+        
         <div className='dc-vert-container' ref={framesHandler}></div>
-        <div className='dc-vert-container' ref={layerHandler}></div>
+        <div className='dc-vert-container' ref={layerHandler}>
+            <button onClick={()=>{createLayer()}}>Create Layer</button>
+            <div className="layerHolder">
+
+            </div>
+            <div className="backgroundLayerPreviewHolder">
+
+            </div>
+            <div className="layerSettingsBar">
+
+            </div>
+        </div>
         <div className='dc-vert-container tools-handler' ref={toolsHandler}>
             <button className="toolbar-button" onClick={() => {
                 const canvas = canvasRef.current;

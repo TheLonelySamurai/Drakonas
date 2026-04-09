@@ -4,7 +4,7 @@ import Tool from "./Tool";
 class Pen extends Tool{
     public lineWidth = 59;
     public opacity = 1;
-    public name = "Pen";
+    public name = "Pen Tool";
     constructor(){
         super();
     }

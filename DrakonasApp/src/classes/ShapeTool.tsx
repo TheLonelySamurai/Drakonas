@@ -3,7 +3,10 @@ import PosXY from "./PosXY";
 import StrokeSettings from "./StrokeSettings";
 class ShapeTool extends Tool{
     public lineWidth=3;
+    public name = "Shape Tool";
     public strokeStyle="black";
+    public fillStyle="transparent";
+    public opacity=1;
     public temporaryPoints : PosXY[] = [];
     public shapeType="rectangle";
     public isShift=false;
@@ -62,8 +65,11 @@ class ShapeTool extends Tool{
             }
             if(this.temporaryPoints[0] != pos){
                 const ctx=super.getCanvas();
+                if (ctx == null) return;
                 ctx.lineWidth=this.lineWidth;
-                ctx.strokeStyle=Tool.colorPrimary; 
+                ctx.strokeStyle=Tool.colorPrimary;
+                ctx.fillStyle=this.fillStyle;
+                ctx.globalAlpha=this.opacity;
                 this.temporaryPoints.push(pos);
                 const pos1 = this.temporaryPoints[0];
                 const pos2 = this.temporaryPoints[1];
@@ -77,7 +83,7 @@ class ShapeTool extends Tool{
                 strokeSet.strokeStyle = Tool.colorPrimary;
                 strokeSet.lineWidth = this.lineWidth;
                 this.saveAction(strokeSet,this.p);
-                this.p = null;
+                this.p = new Path2D();
                 this.actionFinished = 2;
                 this.temporaryPoints = [];
                 Tool.isDrawing= false
@@ -124,6 +130,63 @@ class ShapeTool extends Tool{
         }
         ctx.stroke(this.p);
         
+    }
+    
+    exportProperties(): JSON {
+        return JSON.parse(JSON.stringify({
+            0: {"name": "Line Width" ,
+                "type": {"type": "number", "min": 1, "max": 1000, "step": 1}},
+            1: {"name" : "Fill Color",
+                "type" : {"type": "color"}},
+            2: {"name" : "Stroke Color",
+                "type" : {"type": "color"}},
+            3: {"name" : "Shape Type",
+                "type" : {"type": "select", "options": ["rectangle", "ellipse"]}},
+            4: {"name": "Opacity",  
+                "type": {"type": "number", "min": 0, "max": 1, "step": 0.01}}
+        }));
+    }
+    updateProperty(propertyName: string, value: any): void {
+        switch(propertyName){
+            case "Line Width":
+                this.lineWidth = value;
+                break;
+            case "Fill Color":
+                this.fillStyle = value;
+                break;
+            case "Stroke Color":
+                this.strokeStyle = value;
+                break;
+            case "Shape Type":
+                this.shapeType = value;
+                break;
+            case "Opacity":
+                this.opacity = value;
+                break;
+            default:
+                break;
+        }
+    }
+    getProperty(propertyName: string): any{
+        switch(propertyName){
+            case "Line Width":
+                return this.lineWidth;
+                break;
+            case "Stroke Color":
+                return this.strokeStyle;
+                break;
+            case "Fill Color":
+                return this.fillStyle;
+                break;
+            case "Shape Type":
+                return this.shapeType;
+                break;
+            case "Opacity":
+                return this.opacity;
+                break;
+            default:
+                return null;
+        }
     }
 }
 export default ShapeTool;

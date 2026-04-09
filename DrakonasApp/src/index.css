@@ -1,4 +1,6 @@
-
+*{
+  box-sizing:border-box;
+}
 
 :root {
   --bg-light: #9fa1a6;

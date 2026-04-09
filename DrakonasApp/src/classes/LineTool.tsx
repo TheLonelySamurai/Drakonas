@@ -5,7 +5,7 @@ class Line extends Tool{
     public lineWidth = 1;
     public lineCap : CanvasLineCap = "butt";
     public opacity = 1;
-    public name = "Line";
+    public name = "Line Tool";
     public temporaryPoints : PosXY[] = [];
     
     constructor(){

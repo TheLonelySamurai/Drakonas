@@ -29,7 +29,7 @@ function Login(){
             e.preventDefault();
             const formData = new FormData(e.target as HTMLFormElement);
             const username = formData.get("username") as string;
-            const password = formData.get("password") as string;
+            const password = formData.get("password") as string ;
             try {
                 var result = await login(username, password);
                 console.log("Login successful!");
