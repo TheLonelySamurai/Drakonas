@@ -55,6 +55,7 @@ function DrawingCanvas() {
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
+         //localStorage.clear();
         // Runs AFTER render, the initialization of the elements to their functionality
         const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
         const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
@@ -91,11 +92,66 @@ function DrawingCanvas() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         createToolPropertiesMenuForm();
+        const savedFrames=localStorage.getItem("frames")
+        const currentFrame=localStorage.getItem("current_frame");
+        const currentLayer=localStorage.getItem("current_layer");
+        console.log(savedFrames);
+        if(savedFrames && currentFrame && currentLayer){
+            currentFrameIndex.current=JSON.parse(currentFrame) ;
+            currentLayerIndex.current=JSON.parse(currentLayer);
+            const rewritten_map: any[]=[];
+            const current_frames=JSON.parse(savedFrames);
+            current_frames.forEach((layer)=>
+            {
+                const layers:any[]=[];
+               for(let i=0;i<layer.length;i++){
+                const maps:any[]=[];
+                for (let t=0;t<layer[i].length;t++){
+                    if(layer[i][t]!=null){
+                        var path_map = layer[i][t];
+                        var map=new Map<StrokeSettings,Path2D>()
+                       for(let j = 0; j < path_map.length;j++){
+                        console.log(path_map[j])
+                        if(!path_map[j].stroke || !path_map[j].path){
+                            console.log("Skipped")
+                            continue;
+                        }
+                        
+                        var strokeSet:StrokeSettings=JSON.parse(path_map[j].stroke);
+                        var path:Path2D=JSON.parse(path_map[j].path)
+                        console.log(JSON.stringify([strokeSet,path]))
+                        map.set(strokeSet,path)
+                       }
+                       maps.push(map); 
+                    }
+                    
+                }
+                layers.push(maps);
+               }
+                rewritten_map.push(layers) 
+            }); 
+
+            frames.current=rewritten_map;    
+
+
+            drawBackground();
+            for (let i=0;i<frames.current.length;i++){
+                addPreviewFrameToFramesHandler(i);
+            }
+            loadFrame(currentFrameIndex.current);
+            for (let i=0;i<canvasLayers.current.length;i++){
+                addLayerPreview(i);
+            }
+            switchLayers(currentLayerIndex.current);
+        }
+        else{
         clearCanvas();
         clearOnionSkin();
         saveFrame();
         drawBackground();
         createLayer();
+        }
+       
         // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
         moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
         const removeUndo = window.historyAPI.onUndo(() => undo());
@@ -111,6 +167,7 @@ function DrawingCanvas() {
             frames.current[currentFrameIndex.current] = [...canvasLayers.current];
             // Update the preview for this frame
             addPreviewFrameToFramesHandler(currentFrameIndex.current);
+            save();
 
         }
         
@@ -325,7 +382,14 @@ function DrawingCanvas() {
             // console.log("PATHS + " +paths.current);
             for(let i = 0; i < paths.current.length; i ++){
                 let map = paths.current[i];
-                // console.log(map);
+                console.log(paths.current);
+                if(map instanceof Array){
+                    console.log("Array");
+                    
+                }
+                if(map instanceof Map){
+                    console.log("Map");
+                }
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
                     if (value == null)return;
@@ -514,6 +578,34 @@ function DrawingCanvas() {
         }
         function moveLayers(){
             //Move layers up and down in the layer stack, this will change the order they are drawn in which will change how they overlap with each other
+        }
+        function save(){
+            const frames_copy: any[]=[];
+            
+            frames.current.forEach((layer,index)=>{
+                var layers_copy: any[]=[];
+                for(let i=0;i<layer.length;i++){
+                    var paths_copy: any[]=[]
+                    for(let f=0;f<layer[i].length;f++){
+                        var path_map:any[]=[]
+                        layer[i][f].forEach((value,key)=>{
+                            var object={
+                                stroke:JSON.stringify(key),
+                                path:JSON.stringify(value)
+                            };
+                            path_map.push(object);
+                        })
+                        
+                        paths_copy.push(path_map);
+                    }
+                    layers_copy.push(paths_copy);
+                } 
+            frames_copy.push(layers_copy);
+            }
+               ); 
+            localStorage.setItem("frames",JSON.stringify(frames_copy));
+            localStorage.setItem("current_frame",JSON.stringify(currentFrameIndex.current));
+            localStorage.setItem("current_layer",JSON.stringify(currentLayerIndex.current));
         }
 /*
     // function exportToGif(){
