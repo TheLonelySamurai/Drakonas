@@ -1,8 +1,46 @@
-import { app, BrowserWindow, Menu, ipcMain, screen, session } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, screen, session, dialog } from 'electron';
 import menu  from './menu';
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import ProjectPage from './views/ProjectPage'
+import fs from 'fs'; // Ensure this is imported at the top
+import GifEncoder from 'gif-encoder';
+
+ipcMain.on('generate-gif', (event, { frames, width, height, fps }) => {
+  const gif = new GifEncoder(width, height);
+  const chunks: Buffer[] = [];
+
+  // 1. Setup data collection
+  gif.on('data', (data: Buffer) => chunks.push(data));
+  
+  gif.on('end', async () => {
+    const fullBuffer = Buffer.concat(chunks);
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Save your GIF',
+      defaultPath: 'animation.gif',
+      filters: [{ name: 'Images', extensions: ['gif'] }]
+    });
+
+    if (filePath) {
+      fs.writeFileSync(filePath, fullBuffer);
+      event.reply('gif-finished', 'saved');
+    }
+  });
+
+  // 2. Start Encoding
+  gif.writeHeader();
+  gif.setRepeat(0);     // 0 for loop
+  gif.setDelay(1000 / fps);    // ms per frame
+  gif.setQuality(10);
+
+  frames.forEach((pixelData: any) => {
+    // Reconstruct the TypedArray from the IPC data
+    const pixels = new Uint8ClampedArray(Object.values(pixelData));
+    gif.addFrame(pixels); 
+  });
+
+  gif.finish();
+});
 
 let javaProcess: ChildProcess | null = null;
 

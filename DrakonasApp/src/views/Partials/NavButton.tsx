@@ -1,5 +1,4 @@
 import { useRef, useEffect } from 'react';
-import { Menu, webContents } from 'electron';
 import {useNavigate} from 'react-router-dom';
 import UserController from '../../classes/UserController';
 function Navigation( {name, url, id, conditional}:{name:string, url:string, id?:string, conditional?:string}){
