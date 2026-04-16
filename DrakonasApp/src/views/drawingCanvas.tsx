@@ -8,6 +8,7 @@ import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
 import Shape from "../classes/ShapeTool";
+import Eraser from "../classes/EraserTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
     //Canvases
@@ -38,6 +39,7 @@ function DrawingCanvas() {
     tools.set("pen", new Pen());
     tools.set("line", new Line());
     tools.set("shape",new Shape());
+    tools.set("eraser",new Eraser());
     //Deprecated 
     const temporaryPoints = useRef([]);
     const isDrawing = useRef(false);
@@ -892,58 +894,19 @@ function DrawingCanvas() {
         }
         Tool.scale = currentScale.current;
     }
-    // rotate Function 
-    /* 
-        1. Clear the current canvas (its only one layer so canvasRef.current)
-        2. Use the canvas context's transform function to rotate the canvas 
-                by the desired angle 
-                (this will rotate all future drawings on the canvas, 
-                so we need to redraw the existing paths after this)
-        3. Use the redrawCanvas function to redraw all existing paths 
-                onto the now rotated canvas
-        4. Rotate the canvas context back to normal by applying the inverse
-                of the rotation transform 
-                (this is necessary to ensure that future drawings 
-                are not rotated by the same angle, we only want to 
-                rotate the existing paths, not future ones)
-    */
-    // function resizeDrawingApp() {
-    //     const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
-    //     const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
-    //     const canvasContainer = document.querySelector('.canvasContainer') as HTMLElement;
-    //     // Resize the drawing app to fit inside the canvas holder, which has viewport based sizing
-    //     const resizeObserver = new ResizeObserver(() => {
-    //         const holderRect = canvasHolder.getBoundingClientRect();
-    //         drawingApp.style.width = `${holderRect.width}px`;
-    //         drawingApp.style.height = `${holderRect.height}px`;
-    //     });
-    //     resizeObserver.observe(canvasHolder);
-    //     // Then resize the canvas to fit inside the drawing app, which is now sized to the canvas holder
-    //     // This WILL (not yet) resizes the scale of the canvases, not the ratio of them.
-    //     const canvasResizeObserver = new ResizeObserver(() => {
-    //         const appRect = drawingApp.getBoundingClientRect();
-    //         scaleCanvas(1); // Reset scale to 1 before resizing
-    //         canvasContainer.style.transform = `translate(0px, 0px)`;
-    //         currentScale.current = 1;
-    //         if (canvasRef.current) {
-    //             canvasRef.current.width = appRect.width;
-    //             canvasRef.current.height = appRect.height;
-    //         }
-    //         if (backgroundCanvasRef.current) {
-    //             backgroundCanvasRef.current.width = appRect.width;
-    //             backgroundCanvasRef.current.height = appRect.height;
-    //             drawBackground();
-    //         }
-    //         if (canvasOnionRef.current) {
-    //             canvasOnionRef.current.width = appRect.width;
-    //             canvasOnionRef.current.height = appRect.height;
-    //         } 
-    //     });
-    //     canvasResizeObserver.observe(drawingApp);
-    //     scaleCanvas(0.08); // Initial scale to fit the canvas inside the drawing app
-
-    // }
-//undo redo
+    function rotate(angle: number){
+        const canvas=canvasRef.current;
+        if (!canvas) return;
+        const ctx=canvas.getContext('2d');
+        if (!ctx) return;
+        clearCanvas();
+        ctx.translate(canvas.width/2,canvas.height/2);
+       ctx.rotate(angle);
+        redrawCanvas();
+        ctx.rotate(-angle);
+        ctx.translate(-(canvas.width/2),-(canvas.height/2));
+    }
+    //undo redo
     function undo(){
         const lastPath = paths.current.pop();
         if (lastPath) {
@@ -1251,9 +1214,32 @@ function DrawingCanvas() {
                 if (!canvas) return;
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
+                toolMode.current = "eraser"
+            }}>
+               Eraser Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+                toolMode.current = "eraser";
+            }}>
+               Eraser Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
                 swapTool("shape");
             }}>
                Shape Tool 
+            </button>
+            <button className="toolbar-button" onClick={() => {
+                rotate(30);  
+            }}>
+               Rotate Tool 
             </button>
             <div className="colorInputContainer">
                 <div className="colorInput">

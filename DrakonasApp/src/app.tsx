@@ -15,8 +15,9 @@ import ProfilePage from "./views/ProfilePage"
 import Main from 'electron/main';
 import Login from './views/Login'
 import SignUp from './views/SignUp'
+import StoryboardForm from './views/FormforStoryboard'
 createRoot(document.body).render(
-  <MemoryRouter initialEntries={['/login', '/signup', '/project', '/projecttype', '/workshop', '/settings', '/profile']} initialIndex={4}>
+  <MemoryRouter initialEntries={['/login', '/signup', '/project', '/projecttype', '/workshop', '/settings', '/profile','/storyboardform']} initialIndex={7}>
     <Routes>
       <Route path="/signup" element={<PageTemplate Page={SignUp} id="signup-page" />} />
       <Route path="/login" element={<PageTemplate Page={Login} id="login-page"/>} />
@@ -25,6 +26,7 @@ createRoot(document.body).render(
       <Route path="/workshop" element={<PageTemplate Page={Workshop} id="workshop-page" />} />
       <Route path="/settings" element={<PageTemplate Page={Settings} id="settings-page" />} />
       <Route path="/profile" element={<PageTemplate Page={ProfilePage} id="profile-page" />} />
+      <Route path="/storyboardform" element={<PageTemplate Page={StoryboardForm} id="storyboard-form-page"/>}/>
     </Routes>
   </MemoryRouter>
 );
