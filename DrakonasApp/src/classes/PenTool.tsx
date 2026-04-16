@@ -5,8 +5,10 @@ class Pen extends Tool{
     public lineWidth = 59;
     public opacity = 1;
     public name = "Pen Tool";
+    public svgStr : string;
     constructor(){
         super();
+        this.svgStr = "";
     }
     down(e: React.MouseEvent<HTMLCanvasElement>) {
         super.down(e);
@@ -19,7 +21,8 @@ class Pen extends Tool{
         strokeSet.strokeStyle = Tool.colorPrimary;
         strokeSet.lineWidth = this.lineWidth;
         strokeSet.lineCap = 'round';
-        this.saveAction(strokeSet, this.p);
+        this.saveAction(strokeSet, this.p, this.svgStr);
+        this.svgStr = "";
         const temp = this.p;
         this.p = new Path2D();
         Tool.isDrawing = false;
@@ -40,6 +43,7 @@ class Pen extends Tool{
             this.p.moveTo(Tool.lastPos.x, Tool.lastPos.y);
             this.p.lineTo(this.pos.x, this.pos.y);
             ctx.stroke(this.p);
+            this.svgStr += `M ${Tool.lastPos.x,}  ${Tool.lastPos.y} L ${this.pos.x} ${this.pos.y}`
 
             Tool.lastPos = this.pos;
             

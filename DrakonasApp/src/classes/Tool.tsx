@@ -11,10 +11,10 @@ abstract class Tool {
     public p: Path2D;
     public static colorPrimary : string | CanvasGradient;
     public static colorSecondary : string | CanvasGradient;
-    public actions : Map<StrokeSettings, Path2D>;
+    public actions : Map<StrokeSettings, Object>;
     public actionFinished : number;
     constructor() {
-        this.actions = new Map<StrokeSettings, Path2D>();
+        this.actions = new Map<StrokeSettings, Object>();
         this.actionFinished = 0;
     }
     
@@ -53,11 +53,15 @@ abstract class Tool {
         return ctx;
 
     }
-    saveAction(strokeSet : StrokeSettings, path: Path2D){
-        this.actions.set(strokeSet, path);
+    saveAction(strokeSet : StrokeSettings, path: Path2D, svgStr: String){
+        const obj = {
+            path : path,
+            svgStr : svgStr
+        }
+        this.actions.set(strokeSet, obj);
     }
-    exportActionMap():Map<StrokeSettings, Path2D>{
-        var temp = new Map<StrokeSettings, Path2D>();
+    exportActionMap():Map<StrokeSettings, Object>{
+        var temp = new Map<StrokeSettings, Object>();
         this.actions.forEach(function (value,key){
             temp.set(key,value);
         })

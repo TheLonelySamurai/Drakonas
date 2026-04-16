@@ -75,7 +75,8 @@ class Line extends Tool{
                 strokeSet.strokeStyle = Tool.colorPrimary;
                 strokeSet.lineCap = this.lineCap;
                 strokeSet.lineWidth = this.lineWidth;
-                this.saveAction(strokeSet, this.p);
+                const svg = `M ${pos1.x}  ${pos1.y} L ${pos2.x} ${pos2.y}`;
+                this.saveAction(strokeSet, this.p, svg);
                 this.p = null;
                 this.temporaryPoints = [];
                 Tool.isDrawing= false

@@ -10,6 +10,7 @@ class ShapeTool extends Tool{
     public temporaryPoints : PosXY[] = [];
     public shapeType="rectangle";
     public isShift=false;
+    public svgStr = "";
     constructor(){
         super();
     }
@@ -82,7 +83,8 @@ class ShapeTool extends Tool{
                 var strokeSet = new StrokeSettings();
                 strokeSet.strokeStyle = Tool.colorPrimary;
                 strokeSet.lineWidth = this.lineWidth;
-                this.saveAction(strokeSet,this.p);
+                this.saveAction(strokeSet,this.p, this.svgStr);
+                this.svgStr = "";
                 this.p = new Path2D();
                 this.actionFinished = 2;
                 this.temporaryPoints = [];
@@ -93,17 +95,22 @@ class ShapeTool extends Tool{
     }
     rectangle(ctx: CanvasRenderingContext2D,pos1: PosXY,pos2: PosXY){    
         this.p = new Path2D();   
+        var w = pos2.x - pos1.x;
+        var h = pos2.y - pos1.y;
         if (this.isShift){
 
             if((pos2.x-pos1.x)>(pos2.y-pos1.y)){
-                this.p.rect(pos1.x,pos1.y,pos2.y-pos1.y,pos2.y-pos1.y); 
+                this.p.rect(pos1.x,pos1.y,h,h); 
+                this.svgStr = `M ${pos1.x} ${pos1.y} h ${h} v ${h} h ${-h} z`;
             }
             else{
-                this.p.rect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.x-pos1.x); 
+                this.p.rect(pos1.x,pos1.y, w, w); 
+                this.svgStr = `M ${pos1.x} ${pos1.y} h ${w} v ${w} h ${-w} z`;
             }
         }
         else{
-           this.p.rect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.y-pos1.y); 
+            this.p.rect(pos1.x,pos1.y,pos2.x-pos1.x,pos2.y-pos1.y); 
+            this.svgStr = `M ${pos1.x} ${pos1.y} h ${w} v ${h} h ${-w} z`;
         }
         ctx.stroke(this.p);
 
@@ -116,9 +123,10 @@ class ShapeTool extends Tool{
         var y=Math.round((pos1.y+pos2.y)/2);
         var minimumX=Math.min((pos1.x-x),(pos2.x-x));
         var minimumY=Math.min((pos1.y-y),(pos2.y-y));
-        var radius=Math.abs(Math.min(minimumX,minimumY)); 
-        
-        this.p.arc(x,y,radius,0,Math.PI*2);
+        var r=Math.abs(Math.min(minimumX,minimumY)); 
+
+        this.svgStr = `M ${x+r} ${y} A ${r} ${r} 0 1 1 ${x-r} ${y} A ${r} ${r} 0 1 1 ${x+r} ${y}`;
+        this.p.arc(x,y,r,0,Math.PI*2);
         }
         else{
             var radiusX=Math.abs(pos2.x-pos1.x)/2;
@@ -126,6 +134,7 @@ class ShapeTool extends Tool{
             var centerX=pos1.x+radiusX*Math.sign(pos2.x-pos1.x);
             var centerY=pos1.y+radiusY*Math.sign(pos2.y-pos1.y);
             
+            this.svgStr = `M ${centerX+radiusX} ${centerY} A ${radiusX} ${radiusY} 0 1 1 ${centerX-radiusX} ${centerY} A ${radiusX} ${radiusY} 0 1 1 ${centerX+radiusX} ${centerY}`;
             this.p.ellipse(centerX,centerY,radiusX,radiusY,0,0,2*Math.PI);
         }
         ctx.stroke(this.p);
