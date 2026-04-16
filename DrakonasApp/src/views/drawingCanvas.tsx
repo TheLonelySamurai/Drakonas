@@ -18,7 +18,7 @@ function DrawingCanvas() {
     //Layers
     const layersDivRef = useRef<HTMLDivElement | null>(null);
     const currentLayerDivRef = useRef<HTMLDivElement | null>(null);
-    const canvasLayers = useRef<Map<StrokeSettings,Path2D>[][]>([[]]);// Array of paths for each layer, each path is a map of stroke settings and the path itself
+    const canvasLayers = useRef<Map<StrokeSettings,Object>[][]>([[]]);// Array of paths for each layer, each path is a map of stroke settings and the path itself
     const currentLayerIndex=useRef(0);
     //Section Handlers
     const framesHandler = useRef<HTMLDivElement | null>(null);
@@ -49,13 +49,13 @@ function DrawingCanvas() {
     const wasByAlt = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });
     //Undo Redo and Frames
-    const paths = useRef<Map<StrokeSettings,Path2D>[]>([]);
-    const undonePaths = useRef<Map<StrokeSettings,Path2D>[]>([]);
-    const frames = useRef<Map<StrokeSettings, Path2D>[][][]>([]); // Array of frames, each frame is an array an array of paths
+    const paths = useRef<Map<StrokeSettings,Object>[]>([]);
+    const undonePaths = useRef<Map<StrokeSettings,Object>[]>([]);
+    const frames = useRef<Map<StrokeSettings, Object>[][][]>([]); // Array of frames, each frame is an array an array of paths
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
-         //localStorage.clear();
+         localStorage.clear();
         // Runs AFTER render, the initialization of the elements to their functionality
         const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
         const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
@@ -97,44 +97,8 @@ function DrawingCanvas() {
         const currentLayer=localStorage.getItem("current_layer");
         console.log(savedFrames);
         if(savedFrames && currentFrame && currentLayer){
-            currentFrameIndex.current=JSON.parse(currentFrame) ;
-            currentLayerIndex.current=JSON.parse(currentLayer);
-            const rewritten_map: any[]=[];
-            const current_frames=JSON.parse(savedFrames);
-            current_frames.forEach((layer)=>
-            {
-                const layers:any[]=[];
-               for(let i=0;i<layer.length;i++){
-                const maps:any[]=[];
-                for (let t=0;t<layer[i].length;t++){
-                    if(layer[i][t]!=null){
-                        var path_map = layer[i][t];
-                        var map=new Map<StrokeSettings,Path2D>()
-                       for(let j = 0; j < path_map.length;j++){
-                        console.log(path_map[j])
-                        if(!path_map[j].stroke || !path_map[j].path){
-                            console.log("Skipped")
-                            continue;
-                        }
-                        
-                        var strokeSet:StrokeSettings=JSON.parse(path_map[j].stroke);
-                        var path:Path2D=JSON.parse(path_map[j].path)
-                        console.log(JSON.stringify([strokeSet,path]))
-                        map.set(strokeSet,path)
-                       }
-                       maps.push(map); 
-                    }
-                    
-                }
-                layers.push(maps);
-               }
-                rewritten_map.push(layers) 
-            }); 
-
-            frames.current=rewritten_map;    
-
-
-            drawBackground();
+          load(currentFrame,currentLayer,savedFrames)  
+          drawBackground();
             for (let i=0;i<frames.current.length;i++){
                 addPreviewFrameToFramesHandler(i);
             }
@@ -327,7 +291,7 @@ function DrawingCanvas() {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
-        function drawFromAllLayers(canvas : HTMLCanvasElement, layers: Map<StrokeSettings, Path2D>[][]){
+        function drawFromAllLayers(canvas : HTMLCanvasElement, layers: Map<StrokeSettings, Object>[][]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             for (let i = 0; i < layers.length; i++){
@@ -404,7 +368,7 @@ function DrawingCanvas() {
                 });
             }
         }
-        function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Path2D>[]){
+        function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Object>[]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             console.log("Redrawing canvas with paths: ", paths.current);
@@ -591,7 +555,7 @@ function DrawingCanvas() {
                         layer[i][f].forEach((value,key)=>{
                             var object={
                                 stroke:JSON.stringify(key),
-                                path:JSON.stringify(value)
+                                path:value.svgStr;
                             };
                             path_map.push(object);
                         })
@@ -606,6 +570,46 @@ function DrawingCanvas() {
             localStorage.setItem("frames",JSON.stringify(frames_copy));
             localStorage.setItem("current_frame",JSON.stringify(currentFrameIndex.current));
             localStorage.setItem("current_layer",JSON.stringify(currentLayerIndex.current));
+        }
+        function load(currentFrame:string,currentLayer:string,savedFrames:string){
+            currentFrameIndex.current=JSON.parse(currentFrame) ;
+            currentLayerIndex.current=JSON.parse(currentLayer);
+            const rewritten_map: any[]=[];
+            const current_frames=JSON.parse(savedFrames);
+            current_frames.forEach((layer)=>
+            {
+                const layers:any[]=[];
+               for(let i=0;i<layer.length;i++){
+                const maps:any[]=[];
+                for (let t=0;t<layer[i].length;t++){
+                    if(layer[i][t]!=null){
+                        var path_map = layer[i][t];
+                        var map=new Map<StrokeSettings,Object>()
+                       for(let j = 0; j < path_map.length;j++){
+                        console.log(path_map[j])
+                        if(!path_map[j].stroke || !path_map[j].path){
+                            console.log("Skipped")
+                            continue;
+                        }
+                        
+                        var strokeSet:StrokeSettings=JSON.parse(path_map[j].stroke);
+                        var path=new Path2D(path_map[j].path)
+                        var object={
+                            path:path,
+                            svgStr:path_map[j].path
+                        }
+                        map.set(strokeSet,object)
+                       }
+                       maps.push(map); 
+                    }
+                    
+                }
+                layers.push(maps);
+               }
+                rewritten_map.push(layers) 
+            }); 
+
+            frames.current=rewritten_map;    
         }
 /*
     // function exportToGif(){

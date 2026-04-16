@@ -43,7 +43,7 @@ class Pen extends Tool{
             this.p.moveTo(Tool.lastPos.x, Tool.lastPos.y);
             this.p.lineTo(this.pos.x, this.pos.y);
             ctx.stroke(this.p);
-            this.svgStr += `M ${Tool.lastPos.x,}  ${Tool.lastPos.y} L ${this.pos.x} ${this.pos.y}`
+            this.svgStr += `M ${Tool.lastPos.x}  ${Tool.lastPos.y} L ${this.pos.x} ${this.pos.y}`
 
             Tool.lastPos = this.pos;
             
