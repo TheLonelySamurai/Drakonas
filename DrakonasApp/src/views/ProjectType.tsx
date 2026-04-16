@@ -12,7 +12,7 @@ function ProjectType(){
                 </div>  
             </div>
         </div>
-        
+         
     )
 }
 export default ProjectType;

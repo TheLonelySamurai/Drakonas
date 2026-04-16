@@ -12,6 +12,11 @@ export const rendererConfig: Configuration = {
   module: {
     rules,
   },
+  
+  node: {
+    __dirname: false,
+    __filename: false,
+  },
   plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css'],

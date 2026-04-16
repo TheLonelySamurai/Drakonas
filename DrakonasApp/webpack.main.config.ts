@@ -13,6 +13,13 @@ export const mainConfig: Configuration = {
   module: {
     rules,
   },
+  
+  externals: {
+  },
+  node: {
+    __dirname: true,
+    __filename: true,
+  },
   plugins,
   resolve: {
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.css', '.json'],

@@ -6,6 +6,7 @@ class StrokeSettings{
     public lineCap : CanvasLineCap;
     public fillStyle : string;
     public globalAlpha : number;
+    public isEraser : boolean;
     constructor(){
         this.order = Tool.order;
         Tool.order ++;
