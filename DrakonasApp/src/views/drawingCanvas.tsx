@@ -57,7 +57,7 @@ function DrawingCanvas() {
     const currentFrameIndex = useRef(0);
     
     useEffect(() => {
-         localStorage.clear();
+        //  localStorage.clear();
         // Runs AFTER render, the initialization of the elements to their functionality
         const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
         const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
@@ -378,7 +378,7 @@ function DrawingCanvas() {
                     // console.log(map);
                     map.forEach(function (value, key){
                         // console.log("KEY: " + key + " | VALUE: " + value)
-                        if (value == null)return;
+                        if (value.path == null)return;
                         // console.log(key);
                         // console.log(value)
                         ctx.fillStyle = key.fillStyle;
@@ -386,7 +386,7 @@ function DrawingCanvas() {
                         ctx.lineWidth = key.lineWidth;
                         ctx.lineCap  = key.lineCap;
                         if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                        ctx.stroke(value);
+                        ctx.stroke(value.path);
                     });
                 }
             }
@@ -433,7 +433,7 @@ function DrawingCanvas() {
                 }
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value == null)return;
+                    if (value.path == null)return;
                     // console.log(key);
                     // console.log(value)
                     ctx.fillStyle = key.fillStyle;
@@ -441,7 +441,7 @@ function DrawingCanvas() {
                     ctx.lineWidth = key.lineWidth; 
                     ctx.lineCap  = key.lineCap;
                     if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                    ctx.stroke(value);
+                    ctx.stroke(value.path);
                 });
             }
         }
@@ -456,7 +456,7 @@ function DrawingCanvas() {
                 // console.log(map);
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value == null)return;
+                    if (value.path == null)return;
                     // console.log(key);
                     // console.log(value)
                     ctx.fillStyle = key.fillStyle;
@@ -464,7 +464,7 @@ function DrawingCanvas() {
                     ctx.lineWidth = key.lineWidth;
                     ctx.lineCap  = key.lineCap;
                     if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                    ctx.stroke(value);
+                    ctx.stroke(value.path);
                 });
             }
         }
@@ -567,7 +567,7 @@ function DrawingCanvas() {
                 const layerHolder = layerHandler.current?.getElementsByClassName('layerHolder')[0];
                 if (!layerHolder) return;
                 layerHolder.appendChild(layerPreviewContainer);
-
+ 
         }
         function switchLayers(index:number){
             scaleCanvas(1);//Ensure the layer canvases are the correct size
@@ -581,20 +581,7 @@ function DrawingCanvas() {
                     console.log(`Mainlayer-${currentLayerIndex.current+1}`);
         
                     const canvas=canvasLayerElements[i];
-                const ctx=canvasLayerElements[i].getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    for (let i=0;i<paths.current.length;i++){
-                        let map = paths.current[i];
-                // console.log(map);
-                        map.forEach(function (value, key){
-                            if (value == null)return;
-                            ctx.fillStyle = key.fillStyle;
-                            ctx.strokeStyle = key.strokeStyle;
-                            ctx.lineWidth = key.lineWidth;
-                            ctx.lineCap  = key.lineCap;
-                            ctx.stroke(value);
-                        });
-                    }
+                    drawAnyCanvas(canvas, paths.current);
                     continue;
                 }
                 if (canvasLayerElements[i].id==`Mainlayer-${index+1}`){
@@ -666,7 +653,7 @@ function DrawingCanvas() {
                         layer[i][f].forEach((value,key)=>{
                             var object={
                                 stroke:JSON.stringify(key),
-                                path:value.svgStr;
+                                path:value.svgStr
                             };
                             path_map.push(object);
                         })
