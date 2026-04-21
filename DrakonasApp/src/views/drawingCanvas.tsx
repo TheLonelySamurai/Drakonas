@@ -421,42 +421,95 @@ function DrawingCanvas() {
             console.log("Redrawing canvas with paths: ", paths.current);
             clearCanvas();
             // console.log("PATHS + " +paths.current);
-            for(let i = 0; i < paths.current.length; i ++){
-                let map = paths.current[i];
-                console.log(paths.current);
-                if(map instanceof Array){
-                    console.log("Array");
+            drawAnyCanvas(canvas,paths.current)
+            // for(let i = 0; i < paths.current.length; i ++){
+            //     let map = paths.current[i];
+            //     console.log(paths.current);
+            //     if(map instanceof Array){
+            //         console.log("Array");
                     
-                }
-                if(map instanceof Map){
-                    console.log("Map");
-                }
-                map.forEach(function (value, key){
-                    // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value.path == null)return;
-                    // console.log(key);
-                    // console.log(value)
-                    ctx.fillStyle = key.fillStyle;
-                    ctx.strokeStyle = key.strokeStyle;
-                    ctx.lineWidth = key.lineWidth; 
-                    ctx.lineCap  = key.lineCap;
-                    if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                    ctx.stroke(value.path);
-                });
-            }
+            //     }
+            //     if(map instanceof Map){
+            //         console.log("Map");
+            //     }
+            //     map.forEach(function (value, key){
+            //         // console.log("KEY: " + key + " | VALUE: " + value)
+            //         if (value.path == null)return;
+            //         // console.log(key);
+            //         // console.log(value)
+            //         ctx.fillStyle = key.fillStyle;
+            //         ctx.strokeStyle = key.strokeStyle;
+            //         ctx.lineWidth = key.lineWidth; 
+            //         ctx.lineCap  = key.lineCap;
+            //         if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+            //         ctx.stroke(value.path);
+            //     });
+            // }
         }
         function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Object>[]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
             console.log("Redrawing canvas with paths: ", paths.current);
             ctx.clearRect(0,0, canvas.width, canvas.height)
-            // console.log("PATHS + " +paths.current);
+             console.log("PATHS + " +paths.current);
+             mapDraw(canvas,ctx,pathsToDraw);
+            // for(let i = 0; i < pathsToDraw.length; i ++){
+            //     let map = pathsToDraw[i];
+            //     // console.log(map);
+            //     map.forEach(function (value, key){
+            //         // console.log("KEY: " + key + " | VALUE: " + value)
+
+            //         if (value.path == null){
+            //                 if(key.angle!=null){
+            //                 var degrees=key.angle
+            //                 ctx.clearRect(0,0,canvas.width,canvas.scrollHeight)
+            //                  ctx.translate(canvas.width/2,canvas.height/2);
+            //                 ctx.rotate(degrees);
+            //                 for(let f=0;f<i;f++){
+            //                     let mapTo=pathsToDraw[f];
+            //                     mapTo.forEach(function(value,key))
+            //                 }
+            //                 ctx.rotate(-degrees);
+            //                 ctx.translate(-(canvas.width/2),-(canvas.height/2));
+            //             }
+                        
+                        
+            //         }return;
+            //         // console.log(key);
+                    // console.log(value)
+            //         ctx.fillStyle = key.fillStyle;
+            //         ctx.strokeStyle = key.strokeStyle;
+            //         ctx.lineWidth = key.lineWidth;
+            //         ctx.lineCap  = key.lineCap;
+            //         if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+            //         ctx.stroke(value.path);
+            //     });
+            // }
+        }
+        function mapDraw(canvas:HTMLCanvasElement,ctx:CanvasRenderingContext2D,pathsToDraw:Map<StrokeSettings,Object>[]){
+            let mapCopy=[];
             for(let i = 0; i < pathsToDraw.length; i ++){
                 let map = pathsToDraw[i];
                 // console.log(map);
+                if(i!=0){
+                    mapCopy.push(pathsToDraw[i-1]);
+                }
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value.path == null)return;
+
+                    if (value.path == null){
+                            if(key.angle!=null){
+                            var degrees=key.angle
+                            ctx.clearRect(0,0,canvas.width,canvas.scrollHeight)
+                             ctx.translate(canvas.width/2,canvas.height/2);
+                            ctx.rotate(degrees);
+                            mapDraw(canvas,ctx,mapCopy)
+                            ctx.rotate(-degrees);
+                            ctx.translate(-(canvas.width/2),-(canvas.height/2));
+                        }
+                        
+                        
+                    }return;
                     // console.log(key);
                     // console.log(value)
                     ctx.fillStyle = key.fillStyle;
@@ -988,6 +1041,13 @@ function DrawingCanvas() {
         redrawCanvas();
         ctx.rotate(-angle);
         ctx.translate(-(canvas.width/2),-(canvas.height/2));
+        var settings=new StrokeSettings;
+        settings.angle=angle;
+        var temp_map=new Map<StrokeSettings,Object>()
+        
+        paths.current.push(temp_map.set(settings,{path:null,svgStr:null}));
+
+
     }
     //undo redo
     function undo(){
@@ -1257,9 +1317,13 @@ function DrawingCanvas() {
         }}>
             Export to GIF
         </button>
+        <button onClick={() => {
+            localStorage.clear();
+        }}>
+            Clear Local Storage
+        </button>
         </div>
-        </div>
-        
+        </div> 
         <div className='dc-vert-container' ref={framesHandler}></div>
         <div className='dc-vert-container' ref={layerHandler}>
             <button onClick={()=>{createLayer()}}>Create Layer</button>
@@ -1355,6 +1419,7 @@ function DrawingCanvas() {
                 </div>
             </div>
         </div>
+
         <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
                 <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3></button></div>
