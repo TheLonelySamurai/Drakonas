@@ -3,8 +3,55 @@ import menu  from './menu';
 import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import ProjectPage from './views/ProjectPage'
-import fs from 'fs'; // Ensure this is imported at the top
+import fs from 'fs';
+import AdmZip from 'adm-zip';
 import GifEncoder from 'gif-encoder';
+
+ipcMain.handle("save-to-zip", async (event, {fileName, data, layerSettings, toolSettings})=>{
+   // 1. Let the user choose where to save the file
+  const { filePath } = await dialog.showSaveDialog({
+    title: 'Save Project',
+    defaultPath: `${fileName}.drkns`, // Use your custom extension
+    filters: [{ name: 'Custom Zip Files', extensions: ['drkns'] }]
+  });
+
+  if (filePath) {
+    const zip = new AdmZip();
+    
+    // 2. Add content (e.g., a JSON file containing your React state)
+    const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
+    zip.addFile("project.json", Buffer.from(content, "utf8"));
+    
+    // 3. Write the zip file to the chosen path
+    zip.writeZip(filePath);
+    return { success: true, path: filePath };
+  }
+  return { success: false };
+})
+
+ipcMain.handle("load-from-local-zip", async () =>{
+  const { canceled, filePaths } = await dialog.showOpenDialog({
+    filters: [{ name: 'Custom Project', extensions: ['drkns'] }],
+    properties: ['openFile']
+  });
+
+  if (canceled || filePaths.length === 0) return null;
+
+  try {
+    // AdmZip can read the file regardless of its extension (.drkns / .drakz)
+    const zip = new AdmZip(filePaths[0]);
+    
+    // Read the specific internal file as text
+    const zipEntry = zip.getEntry("project.json");
+    if (!zipEntry) throw new Error("Invalid project file: project.json missing.");
+
+    const content = zip.readAsText(zipEntry);
+    return JSON.parse(content); // Return the object to the Renderer
+  } catch (error) {
+    console.error("Failed to load:", error);
+    throw error;
+  }
+})
 
 ipcMain.on('generate-gif', (event, { frames, width, height, fps }) => {
   const gif = new GifEncoder(width, height);

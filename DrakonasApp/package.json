@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.29.2",
+    "adm-zip": "^0.5.17",
     "canvas": "^3.2.3",
     "console-browserify": "^1.2.0",
     "electron-squirrel-startup": "^1.0.1",

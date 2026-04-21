@@ -1,6 +1,7 @@
 
 import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
+import {useNavigate} from 'react-router-dom';
 import { IconBase } from 'react-icons/lib';
 import { FaCog } from 'react-icons/fa';
 import '../css/drawingCanvas.css';
@@ -11,6 +12,10 @@ import Shape from "../classes/ShapeTool";
 import Eraser from "../classes/EraserTool";
 import StrokeSettings from '../classes/StrokeSettings';
 function DrawingCanvas() {
+    const navigate = useNavigate(); // Hook is called at the top level
+    const goTo = (url:string) => {
+        navigate(url); 
+    };
     //Canvases
     //const refName = useRef<Type | null>(initialValue);
     const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -99,7 +104,7 @@ function DrawingCanvas() {
         const currentLayer=localStorage.getItem("current_layer");
         console.log(savedFrames);
         if(savedFrames && currentFrame && currentLayer){
-          load(currentFrame,currentLayer,savedFrames)  
+          loadFromLocal(currentFrame,currentLayer,savedFrames)  
           drawBackground();
             for (let i=0;i<frames.current.length;i++){
                 addPreviewFrameToFramesHandler(i);
@@ -146,7 +151,7 @@ function DrawingCanvas() {
 
             // Update the preview for this frame
             updatePreviewFrame(currentFrameIndex.current);
-            save();
+            saveToLocal();
         }
         // function newFrame() {
         //     saveFrame(); // Save the current frame before creating a new one
@@ -421,29 +426,25 @@ function DrawingCanvas() {
             console.log("Redrawing canvas with paths: ", paths.current);
             clearCanvas();
             // console.log("PATHS + " +paths.current);
-            for(let i = 0; i < paths.current.length; i ++){
-                let map = paths.current[i];
-                console.log(paths.current);
-                if(map instanceof Array){
-                    console.log("Array");
-                    
-                }
-                if(map instanceof Map){
-                    console.log("Map");
-                }
-                map.forEach(function (value, key){
-                    // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value.path == null)return;
-                    // console.log(key);
-                    // console.log(value)
-                    ctx.fillStyle = key.fillStyle;
-                    ctx.strokeStyle = key.strokeStyle;
-                    ctx.lineWidth = key.lineWidth; 
-                    ctx.lineCap  = key.lineCap;
-                    if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                    ctx.stroke(value.path);
-                });
-            }
+            drawAnyCanvas(canvas, paths.current);
+            // for(let i = 0; i < paths.current.length; i ++){
+            
+            //     map.forEach(function (value, key){
+            //         // console.log("KEY: " + key + " | VALUE: " + value)
+            //         if (value.path == null){
+            //             //IF ROTATE, do rotate stuff
+            //             //ELSE return
+            //         };
+            //         // console.log(key);
+            //         // console.log(value)
+            //         ctx.fillStyle = key.fillStyle;
+            //         ctx.strokeStyle = key.strokeStyle;
+            //         ctx.lineWidth = key.lineWidth; 
+            //         ctx.lineCap  = key.lineCap;
+            //         if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
+            //         ctx.stroke(value.path);
+            //     });
+            // }
         }
         function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Object>[]){
             const ctx = canvas.getContext('2d');
@@ -456,7 +457,32 @@ function DrawingCanvas() {
                 // console.log(map);
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
-                    if (value.path == null)return;
+                    if (!value){  /*
+                        if (key.rotate != null){
+                            //Rotate stuff
+                            clears canvas
+                            rotates the canvas by key.rotate
+                            redraws every path before this point
+                            rotates the canavas back by key.rotate's inverse
+                            
+                        }
+                        return
+                        */
+
+                    }
+                    if (value.path == null){
+                        /*
+                        if (key.rotate != null){
+                            //Rotate stuff
+                            clears canvas
+                            rotates the canvas by key.rotate
+                            redraws every path before this point
+                            rotates the canavas back by key.rotate's inverse
+                            
+                        }
+                        */
+                        return
+                    }
                     // console.log(key);
                     // console.log(value)
                     ctx.fillStyle = key.fillStyle;
@@ -686,11 +712,15 @@ function DrawingCanvas() {
             // frames_copy.push(layers_copy);
             // }
             //    ); 
-            localStorage.setItem("frames",JSON.stringify(frames_copy));
+            return frames_copy;
+        }
+        function saveToLocal(){
+            var data = save();
+            localStorage.setItem("frames",JSON.stringify(data));
             localStorage.setItem("current_frame",JSON.stringify(currentFrameIndex.current));
             localStorage.setItem("current_layer",JSON.stringify(currentLayerIndex.current));
         }
-        function load(currentFrame:string,currentLayer:string,savedFrames:string){
+        function loadFromLocal(currentFrame:string,currentLayer:string,savedFrames:string){
             currentFrameIndex.current=JSON.parse(currentFrame) ;
             currentLayerIndex.current=JSON.parse(currentLayer);
             const rewritten_map: any[]=[];
@@ -730,8 +760,38 @@ function DrawingCanvas() {
 
             frames.current=rewritten_map;    
         }
+        //SAVE PROJECT TO ZIP
+        async function saveToZip(){
+            var animationData = save();
+            await window.mainFunctions.saveToZip({
+                fileName: "TestSave",
+                data: animationData,
+                layerSettings: {numLayers: canvasLayers.current.length},
+                toolSettings: {numTools: tools.size}
+            });
+        }
+        //LOAD FROM ZIP
+        async function loadFromZip(){
+            try{
+                const data = await window.mainFunctions.loadFromLocalZip();
+                if (data){ 
+                    loadFromLocal("0", "0", JSON.stringify(data.animationData));
+                    console.log(data.layerData);
+                    console.log(data.toolData);
+                    saveToLocal();
+                    //Redirect to the same page to reload.
+                    goTo("/workshop");
+                }
+                else{
+                    console.log("No Data");
+                }
+            }
+            catch(err){
+                alert("Could not load");
+            }
+        }
         //EXPORT TO GIF
-        async function exportToGif(){
+        async function exportToGif(){ 
             const canvas = document.createElement('canvas');
             canvas.width = 800;
             canvas.height = 600;
@@ -1277,6 +1337,35 @@ function DrawingCanvas() {
             exportToGif();
         }}>
             Export to GIF
+        </button>
+        
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            saveToZip(); 
+        }}>
+            Save To File
+        </button>
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            loadFromZip(); 
+        }}>
+            Load From File
+        </button>
+        
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            localStorage.clear(); 
+        }}>
+            Clear Local Storage
         </button>
         </div>
         </div>
