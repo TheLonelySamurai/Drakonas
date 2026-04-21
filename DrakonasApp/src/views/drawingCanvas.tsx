@@ -642,29 +642,50 @@ function DrawingCanvas() {
             //Move layers up and down in the layer stack, this will change the order they are drawn in which will change how they overlap with each other
         }
         function save(){
+            //Save the current data of the frames, layers, and their properties.
+            //Also fetch tool preferences from the Tool classes and save those as well
+            //Save the
             const frames_copy: any[]=[];
-            
-            frames.current.forEach((layer,index)=>{
+            frames.current.map((layer, index)=>{
                 var layers_copy: any[]=[];
-                for(let i=0;i<layer.length;i++){
-                    var paths_copy: any[]=[]
-                    for(let f=0;f<layer[i].length;f++){
+                layer.map((paths,index2)=>{
+                    var paths_copy:any[]=[]
+                    paths.map((path, index3)=>{
                         var path_map:any[]=[]
-                        layer[i][f].forEach((value,key)=>{
+                        path.forEach((value,key)=>{
                             var object={
                                 stroke:JSON.stringify(key),
                                 path:value.svgStr
                             };
                             path_map.push(object);
                         })
-                        
                         paths_copy.push(path_map);
-                    }
+                    });
                     layers_copy.push(paths_copy);
-                } 
-            frames_copy.push(layers_copy);
-            }
-               ); 
+                });
+                frames_copy.push(layers_copy);
+            });
+            // frames.current.forEach((layer,index)=>{
+            //     var layers_copy: any[]=[];
+            //     for(let i=0;i<layer.length;i++){
+            //         var paths_copy: any[]=[]
+            //         for(let f=0;f<layer[i].length;f++){
+            //             var path_map:any[]=[]
+            //             layer[i][f].forEach((value,key)=>{
+            //                 var object={
+            //                     stroke:JSON.stringify(key),
+            //                     path:value.svgStr
+            //                 };
+            //                 path_map.push(object);
+            //             })
+                        
+            //             paths_copy.push(path_map);
+            //         }
+            //         layers_copy.push(paths_copy);
+            //     } 
+            // frames_copy.push(layers_copy);
+            // }
+            //    ); 
             localStorage.setItem("frames",JSON.stringify(frames_copy));
             localStorage.setItem("current_frame",JSON.stringify(currentFrameIndex.current));
             localStorage.setItem("current_layer",JSON.stringify(currentLayerIndex.current));
