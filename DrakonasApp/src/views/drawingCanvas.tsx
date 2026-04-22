@@ -11,7 +11,7 @@ import Line from "../classes/LineTool";
 import Shape from "../classes/ShapeTool";
 import Eraser from "../classes/EraserTool";
 import StrokeSettings from '../classes/StrokeSettings';
-function DrawingCanvas() {
+function DrawingCanvas() { 
     const navigate = useNavigate(); // Hook is called at the top level
     const goTo = (url:string) => {
         navigate(url); 
@@ -786,8 +786,10 @@ function DrawingCanvas() {
                     console.log("No Data");
                 }
             }
-            catch(err){
-                alert("Could not load");
+            catch(error: any){
+                console.error("Load failed:", error);
+                // Explicitly show the error message so we know what's happening
+                alert(`Load Error: ${error.message || error}`);
             }
         }
         //EXPORT TO GIF

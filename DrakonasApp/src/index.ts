@@ -43,6 +43,12 @@ ipcMain.handle("load-from-local-zip", async () =>{
     
     // Read the specific internal file as text
     const zipEntry = zip.getEntry("project.json");
+
+    if (!zipEntry) {
+      // This helps you debug: it lists what IS actually inside the zip
+      const entries = zip.getEntries().map(e => e.entryName);
+      throw new Error(`Entry "project.json" not found. Contents: ${entries.join(', ')}`);
+    }
     if (!zipEntry) throw new Error("Invalid project file: project.json missing.");
 
     const content = zip.readAsText(zipEntry);
