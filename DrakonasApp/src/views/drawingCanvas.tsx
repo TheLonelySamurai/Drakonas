@@ -497,19 +497,11 @@ function DrawingCanvas() {
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
 
-                    if (value.path == null){
-                            if(key.angle!=null){
-                            var degrees=key.angle
-                            ctx.clearRect(0,0,canvas.width,canvas.scrollHeight)
-                             ctx.translate(canvas.width/2,canvas.height/2);
-                            ctx.rotate(degrees);
-                            mapDraw(canvas,ctx,mapCopy)
-                            ctx.rotate(-degrees);
-                            ctx.translate(-(canvas.width/2),-(canvas.height/2));
-                        }
-                        
-                        
-                    }return;
+                    if (value.path == null)return;
+                    ctx.translate(canvas.width/2,canvas.height/2)
+                    ctx.rotate(key.angle)
+                    ctx.translate(-canvas.width/2,-canvas.height/2)
+                    console.log(`This angle is ${key.angle}`);
                     // console.log(key);
                     // console.log(value)
                     ctx.fillStyle = key.fillStyle;
@@ -518,6 +510,9 @@ function DrawingCanvas() {
                     ctx.lineCap  = key.lineCap;
                     if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
                     ctx.stroke(value.path);
+                    ctx.translate(canvas.width/2,canvas.height/2)
+                    ctx.rotate(-key.angle)
+                    ctx.translate(-canvas.width/2,-canvas.height/2)
                 });
             }
         }
@@ -1031,23 +1026,14 @@ function DrawingCanvas() {
         Tool.scale = currentScale.current;
     }
     function rotate(angle: number){
-        const canvas=canvasRef.current;
-        if (!canvas) return;
-        const ctx=canvas.getContext('2d');
-        if (!ctx) return;
-        clearCanvas();
-        ctx.translate(canvas.width/2,canvas.height/2);
-       ctx.rotate(angle);
+        angle=angle*(Math.PI/180);
+        for (let i=0;i<paths.current.length;i++){
+            var map=paths.current[i];
+            map.forEach(function(value,key){
+                key.angle+=angle;
+            })
+        }
         redrawCanvas();
-        ctx.rotate(-angle);
-        ctx.translate(-(canvas.width/2),-(canvas.height/2));
-        var settings=new StrokeSettings;
-        settings.angle=angle;
-        var temp_map=new Map<StrokeSettings,Object>()
-        
-        paths.current.push(temp_map.set(settings,{path:null,svgStr:null}));
-
-
     }
     //undo redo
     function undo(){
@@ -1200,6 +1186,7 @@ function DrawingCanvas() {
     }
 
     return (
+    
     <div className="drawingCanvasContainer">
         <div className="drawingApp"
                     onMouseDown={handleMouseDownMoveCanvas}
@@ -1384,7 +1371,8 @@ function DrawingCanvas() {
                Shape Tool 
             </button>
             <button className="toolbar-button" onClick={() => {
-                rotate(30);  
+                const pop_up=document.getElementById("pop-up");
+                pop_up.style.display="flex";
             }}>
                Rotate Tool 
             </button>
@@ -1427,6 +1415,28 @@ function DrawingCanvas() {
                 </div>
             </div>
         </div>
+        <div className="pop-up" id="pop-up">
+                <div style={{width:"100%"}}><span className="close"onClick={()=>{
+                    const pop_up=document.getElementById("pop-up");
+                    pop_up.style.display="none";
+                }}>&#10006;</span>
+                </div>
+                <form onSubmit={(e)=>{
+                    e.preventDefault();
+                    const formData=new FormData(e.target as HTMLFormElement)
+                    var string_angle=formData.get("angle") as string;
+                    var angle=Number(string_angle);
+                    rotate(angle)}
+                    }>
+                <div className="pop_up_other"><label htmlFor="angle">Rotate Layer by:</label><br></br> </div>  
+                <div className="pop_up_middle">
+                <input type="number" id="angle" name="angle" min="0" max="360" className="pop_up_input">
+                </input>
+                &deg;
+                </div>
+                <div className="pop_up_other"><button className="pop_up_button" type="submit">Rotate Layer</button>
+                </div>
+                </form></div>
     </div>
     );
 }

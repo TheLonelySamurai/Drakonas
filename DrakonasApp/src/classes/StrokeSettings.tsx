@@ -7,7 +7,7 @@ class StrokeSettings{
     public fillStyle : string;
     public globalAlpha : number;
     public isEraser : boolean;
-    public angle:number;
+    public angle:number=0;
     constructor(){
         this.order = Tool.order;
         Tool.order ++;
