@@ -116,13 +116,13 @@ function DrawingCanvas() {
             switchLayers(currentLayerIndex.current);
         }
         else{
-        clearCanvas();
-        clearOnionSkin();
-        drawBackground();
-        createLayer();
-        saveLayer();
-        addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
-        saveFrame();
+            clearCanvas();
+            clearOnionSkin();
+            drawBackground();
+            createLayer();
+            saveLayer();
+            addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
+            saveFrame();
         }
        
         // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
@@ -252,7 +252,10 @@ function DrawingCanvas() {
             if (!framesHolder) return;
             const previewCanvases = framesHolder.querySelectorAll('.frame');
             previewCanvases.forEach((canvas, index) => {
-                drawFromAllLayers(canvas.querySelector('canvas'), frames.current[index]);
+                var c = canvas.querySelector('canvas');
+                if (c){
+                    drawFromAllLayers(c, frames.current[index]);
+                }
             });
         }
         function updatePreviewFrame(frameIndex: number){
@@ -339,6 +342,7 @@ function DrawingCanvas() {
             } else {
                 framesHolder.insertBefore(framePreviewContainer, previewCanvases[frameIndex]);
             }
+            updateAllPreviewFrames();
         }
     //Onion Related
         function loadOnionSkin(index: number) {
@@ -376,8 +380,12 @@ function DrawingCanvas() {
         function drawFromAllLayers(canvas : HTMLCanvasElement, layers: Map<StrokeSettings, Object>[][]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
+            if(Array.isArray(layers))console.log("LARRAY");
+            else return;
             for (let i = 0; i < layers.length; i++){
                 const pathsToDraw = layers[i];
+                if (Array.isArray(pathsToDraw))console.log("ARRAY");
+                else return;
                 for(let i = 0; i < pathsToDraw.length; i ++){
                     let map = pathsToDraw[i];
                     // console.log(map);
@@ -760,27 +768,75 @@ function DrawingCanvas() {
 
             frames.current=rewritten_map;    
         }
+        //SAVE TOOL SETTINGS TO OBJECT
+        function saveToolSettingsObj(){
+            var toolProperties : [String, Object][] = [];
+            tools.forEach((tool, name)=>{
+                toolProperties.push([name, tool.exportProperties()]);
+            });
+            const obj = {
+                colorPrimary: Tool.colorPrimary,
+                colorSecondary: Tool.colorSecondary,
+                order: Tool.order,
+                tools: toolProperties
+            }
+
+            return obj;
+        }
+        //LOAD TOOL SETTINGS FROM OBJECT
+        function loadToolSettings(obj: 
+            {
+                colorPrimary: string |  CanvasGradient, 
+                colorSecondary: string | CanvasGradient,
+                order: number,
+                tools: [string, Object][]
+            })
+        {
+            Tool.colorPrimary = obj.colorPrimary;
+            Tool.colorSecondary = obj.colorSecondary;
+            if(inputPrimary.current && inputSecondary.current){
+                inputPrimary.current.value = Tool.colorPrimary as string;
+                inputSecondary.current.value = Tool.colorSecondary as string;
+            }
+            Tool.order = obj.order;
+            console.log(obj);
+            obj.tools.forEach((value)=>{
+                let name = value[0];
+                let toolJSON = value[1];
+                let tool = tools.get(name);
+                if (!tool)return;
+                console.log(toolJSON);
+                if (!toolJSON.properties)return;
+                toolJSON.properties.forEach((property)=>{
+                    tool.updateProperty(property.name, property.value);
+                });
+            });
+            createToolPropertiesMenuForm();
+            
+        }
         //SAVE PROJECT TO ZIP
         async function saveToZip(){
             var animationData = save();
+            var object = saveToolSettingsObj()
             await window.mainFunctions.saveToZip({
                 fileName: "TestSave",
                 data: animationData,
-                layerSettings: {numLayers: canvasLayers.current.length},
-                toolSettings: {numTools: tools.size}
+                layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                toolSettings: object
             });
         }
         //LOAD FROM ZIP
         async function loadFromZip(){
             try{
                 const data = await window.mainFunctions.loadFromLocalZip();
-                if (data){ 
+                if (data){
                     loadFromLocal("0", "0", JSON.stringify(data.animationData));
                     console.log(data.layerData);
                     console.log(data.toolData);
+                    loadToolSettings(data.toolData);
                     saveToLocal();
                     //Redirect to the same page to reload.
-                    goTo("/workshop");
+                    // goTo("/workshop");
                 }
                 else{
                     console.log("No Data");
@@ -817,7 +873,8 @@ function DrawingCanvas() {
             window.mainFunctions.createGif({
             frames: frameData,
             width: canvas.width,
-            height: canvas.height
+            height: canvas.height,
+            fps: 8
             });
         };
         //Use Effect specifically to tell the user the gif finished downloading, will replace alert later.
@@ -826,7 +883,43 @@ function DrawingCanvas() {
             alert("GIF saved to your computer!");
         });
         }, []);
+        
+        async function exportToVid(){ 
+            const canvas = document.createElement('canvas');
+        
+            canvas.width = 800;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return; 
+            const frameData = frames.current.map(frameLayers => {
+            
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                // Use your existing drawing function here
+                drawFromAllLayers(canvas, frameLayers); 
 
+                // Get raw pixel data/
+                // In your Renderer component
+                const pixelData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                console.log(`Sending frame: Length ${pixelData.length}, Type: ${pixelData.constructor.name}`);
+                return pixelData;
+            });
+
+            window.mainFunctions.createVid({
+            frames: frameData,
+            width: canvas.width,
+            height: canvas.height,
+            fps: 8
+            });
+        };
+
+        //Use Effect specifically to tell the user the gif finished downloading, will replace alert later.
+        useEffect(() => {
+        window.mainFunctions.onVidResult(() => {
+            alert("Video saved to your computer!");
+        });
+        }, []);
     // function exportToGif(){
     //     console.log("Exporting to GIF with frames: ", frames.current.length);
     //     console.log("Frames data: ", frames.current);
@@ -1126,7 +1219,7 @@ function DrawingCanvas() {
         form.className = "tool-properties-form";
         //Add inputs to the form based on the current tool
         const tool = tools.get(toolMode.current);
-        /* tool.exportProperties() returns JSON in the following format:
+        /* tool.exportPropertiesForm() returns JSON in the following format:
             {
                 <insert order number>: <Property Name> : <input type>,
             }
@@ -1144,7 +1237,7 @@ function DrawingCanvas() {
         var header = document.createElement('h3');
         header.textContent = `${tool.name} Properties`;
         form.appendChild(header);
-        const properties = tool.exportProperties();
+        const properties = tool.exportPropertiesForm();
         const propertyKeys = Object.keys(properties).sort((a, b) => parseInt(a) - parseInt(b));
         propertyKeys.forEach(key => {
             const property = properties[key];
@@ -1340,6 +1433,15 @@ function DrawingCanvas() {
         }}>
             Export to GIF
         </button>
+        <button onClick={() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            exportToVid();
+        }}>
+            Export to Video
+        </button>
         
         <button onClick={() => {
             const canvas = canvasRef.current;
@@ -1474,6 +1576,7 @@ function DrawingCanvas() {
                 </div>
             </div>
         </div>
+
     </div>
     );
 }

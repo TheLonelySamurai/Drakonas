@@ -68,6 +68,9 @@ abstract class Tool {
         this.actions.clear();
         return temp;
     }
+    exportPropertiesForm(): JSON{
+        return JSON.parse(JSON.stringify({}));
+    }
     exportProperties(): JSON{
         return JSON.parse(JSON.stringify({}));
     }

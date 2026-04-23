@@ -6,6 +6,7 @@ import ProjectPage from './views/ProjectPage'
 import fs from 'fs';
 import AdmZip from 'adm-zip';
 import GifEncoder from 'gif-encoder';
+// import HME from 'h264-mp4-encoder';
 
 ipcMain.handle("save-to-zip", async (event, {fileName, data, layerSettings, toolSettings})=>{
    // 1. Let the user choose where to save the file
@@ -57,6 +58,49 @@ ipcMain.handle("load-from-local-zip", async () =>{
     console.error("Failed to load:", error);
     throw error;
   }
+})
+
+
+ipcMain.on('generate-vid', async (event, {frames, width, height, fps})=> {
+  
+    // Initialize the encoder
+    const HME = await import('h264-mp4-encoder');
+    const encoder = await HME.createH264MP4Encoder();
+    encoder.width = width;
+    encoder.height = height;
+    encoder.frameRate = fps;
+    encoder.initialize();
+
+    // Add each frame of pixel data
+    frames.forEach(frameData => {
+        encoder.addFrameRgba(frameData);
+    });
+
+    // Finalize the encoding process
+    encoder.finalize();
+
+    const uint8Array = encoder.FS.readFile(encoder.outputFilename);
+
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Save your Video',
+      defaultPath: 'animation.mp4',
+      filters: [{ name: 'Videos', extensions: ['mp4'] }]
+    });
+
+    if (filePath) {
+      try {
+        // fs.writeFileSync handles Uint8Array or Buffer automatically
+        fs.writeFileSync(filePath, uint8Array);
+        event.reply("vid-finished", 'saved');
+
+      } catch (err) {
+        console.error('Failed to save video:', err);
+      }
+    }
+
+    // Clean up memory
+    encoder.delete();
+    console.log(`Video saved successfully to: ${filePath}`);
 })
 
 ipcMain.on('generate-gif', (event, { frames, width, height, fps }) => {

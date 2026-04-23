@@ -49,13 +49,26 @@ class Pen extends Tool{
             
         }
     }
-    exportProperties(): JSON{
+    exportPropertiesForm(): JSON{
         return JSON.parse(JSON.stringify({
             0: {"name": "Line Width", 
                 "type" : {"type": "number" , "min": 1, "max": 1000, "step": 1}},
             1: {"name": "Opacity", 
                 "type" : {"type": "number", "min": 0, "max": 1, "step": 0.01}}
         }));
+    }
+    
+    exportProperties(): Object{
+        return {
+            tool: "pen",
+            properties:
+            [
+                {name: "Line Width", 
+                value : this.lineWidth},
+                {name: "Opacity", 
+                value : this.opacity}
+            ]
+        };
     }
     updateProperty(propertyName: string, value: any): void {
         switch(propertyName){
