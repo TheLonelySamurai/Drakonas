@@ -22,8 +22,8 @@ ipcMain.handle("save-to-zip", async (event, {fileName, data, layerSettings, tool
     // 2. Add content (e.g., a JSON file containing your React state)
     const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
     zip.addFile("project.json", Buffer.from(content, "utf8"));
-    
-    // 3. Write the zip file to the chosen path
+  
+    // 3. Write the zip file to the chosen path 
     zip.writeZip(filePath);
     return { success: true, path: filePath };
   }

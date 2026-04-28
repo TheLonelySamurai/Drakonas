@@ -5,13 +5,22 @@ import {useNavigate} from 'react-router-dom'
 function StoryboardForm({name} : {name: String}){
     const durationDiv=useRef<HTMLDivElement| null>(null);
     const frameDiv=useRef<HTMLDivElement| null>(null);
+    const storyboardform = useRef<HTMLDivElement | null>(null);
     const [count,setCount] = useState(0)
     const navigate = useNavigate(); // Hook is called at the top level
     const goTo = (url:string) => {
         navigate(url); 
     };
     const displayStoryboardForm = ()=>{
-
+        if (!storyboardform.current)return;
+        if(storyboardform.current.classList.contains("on")){
+            storyboardform.current.classList.remove('on');
+            storyboardform.current.classList.add('off');
+        }
+        else if(storyboardform.current.classList.contains("off")){
+            storyboardform.current.classList.remove('off');
+            storyboardform.current.classList.add('on');
+        }
     }
     function determineStoryboardFrames(e: React.SubmitEvent<HTMLFormElement>){
         if(!durationDiv.current || !frameDiv.current) return;
@@ -32,8 +41,7 @@ function StoryboardForm({name} : {name: String}){
             }
             duration=frames*5;
         }
-        console.log(duration);
-        console.log(frames);
+        return {frames: frames, duration: duration};
     }
     function changeFrameAmountDeterminer(){
         if(!durationDiv.current || !frameDiv.current) return;
@@ -54,14 +62,15 @@ function StoryboardForm({name} : {name: String}){
     return(
         <>
             <button className="profile-toolbar-button"  onClick={displayStoryboardForm}>{name}</button>
-            <div className="storyboardform" id="storyboard-form-page" >
-                
-                <div className="login-window">
+            <div className="storyboardform off" id="storyboard-form-page" ref={storyboardform} >
+                <button className='storyboardform-exitbutton' onClick={displayStoryboardForm}>X</button>
+                <div className="storyboardform-form">
                     <h2>Storyboard Generator</h2> 
                     <button onClick={()=>{changeFrameAmountDeterminer()}} className="form-button">Change What Determines the Frame Quantity</button>
                     <form id="storyboard_generate" onSubmit={(e)=>{
                             e.preventDefault();
-                            determineStoryboardFrames(e);
+                            const obj = determineStoryboardFrames(e);
+                            localStorage.setItem("createFromStoryboard", JSON.stringify(obj));
                             goTo("/workshop");
                         }}>
                     <div id="duration" className="form-determiner-display on" ref={durationDiv}>
@@ -75,7 +84,7 @@ function StoryboardForm({name} : {name: String}){
                     <button type="submit" form="storyboard_generate" className="form-button">Create Storyboard</button>
                     </form>   
                 </div>
-                
+                 
             </div>
         </>
     )

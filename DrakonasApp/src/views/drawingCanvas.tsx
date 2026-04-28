@@ -35,6 +35,8 @@ function DrawingCanvas() {
     const toolPropertiesMenuFormDiv = useRef<HTMLDivElement | null>(null);
     const toolPropertiesStyle = useRef<HTMLStyleElement | null>(null);
     const layerHandler=useRef<HTMLDivElement | null>(null);
+    //Confirmation form
+    const confirmationform = useRef<HTMLDivElement | null>(null);
     //Color inputs
     const inputPrimary = useRef<HTMLInputElement | null>(null);
     const inputSecondary = useRef<HTMLInputElement | null>(null);
@@ -60,73 +62,109 @@ function DrawingCanvas() {
     const undonePaths = useRef<Map<StrokeSettings,Object>[]>([]);
     const frames = useRef<Map<StrokeSettings, Object>[][][]>([]); // Array of frames, each frame is an array an array of paths
     const currentFrameIndex = useRef(0);
+    //Project Properties
+    const backgroundColor = useRef("#FFF");
+    const canvasDimensions = useRef({width: 800, height: 600});
+    const fps = useRef(12);
+    const projectTitle = useRef<String | null>(null);
     
     useEffect(() => {
-        //  localStorage.clear();
-        // Runs AFTER render, the initialization of the elements to their functionality
-        const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
-        const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
-        const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
-        if (framesHolder) {
-            framesHolder.appendChild(framesHandler.current);
-        }
-        const animationHolder = document.querySelector('.animation-holder') as HTMLElement;
-        if (animationHolder) {  
-            animationHolder.appendChild(animationHandler.current);
-        }
-        const historyHolder = document.querySelector('.history-holder') as HTMLElement;
-        if (historyHolder) {
-            historyHolder.appendChild(historyHandler.current);
-        }
-        const layerHolder = document.querySelector('.layers-holder') as HTMLElement;
-        if (layerHolder) {
-            layerHolder.appendChild(layerHandler.current);
-        }
-        const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
-        if (toolsHolder){
-            toolsHolder.appendChild(toolsHandler.current);
-        }
-        const workshopHolder = document.querySelector('.workshop') as HTMLElement;
-        if (workshopHolder){
-            workshopHolder.appendChild(toolPropertiesMenu.current);
-        }
-        const canvas = canvasRef.current;
-        Tool.canvas = canvas;
-        Tool.scale = currentScale.current; 
-        Tool.colorPrimary = inputPrimary.current.value;
-        Tool.colorSecondary = inputSecondary.current.value;
-        
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        createToolPropertiesMenuForm();
-        const savedFrames=localStorage.getItem("frames")
-        const currentFrame=localStorage.getItem("current_frame");
-        const currentLayer=localStorage.getItem("current_layer");
-        console.log(savedFrames);
-        if(savedFrames && currentFrame && currentLayer){
-          loadFromLocal(currentFrame,currentLayer,savedFrames)  
-          drawBackground();
-            for (let i=0;i<frames.current.length;i++){
-                addPreviewFrameToFramesHandler(i);
+        const initialize = async () => {
+            //  localStorage.clear();
+            // Runs AFTER render, the initialization of the elements to their functionality
+            const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
+            const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
+            const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
+            if (framesHolder) {
+                framesHolder.appendChild(framesHandler.current);
             }
-            loadFrame(currentFrameIndex.current);
-            for (let i=0;i<canvasLayers.current.length;i++){
-                addLayerPreview(i);
+            const animationHolder = document.querySelector('.animation-holder') as HTMLElement;
+            if (animationHolder) {  
+                animationHolder.appendChild(animationHandler.current);
             }
-            switchLayers(currentLayerIndex.current);
-        }
-        else{
-            clearCanvas();
-            clearOnionSkin();
-            drawBackground();
-            createLayer();
-            saveLayer();
-            addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
-            saveFrame();
-        }
-       
-        // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
-        moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
+            const historyHolder = document.querySelector('.history-holder') as HTMLElement;
+            if (historyHolder) {
+                historyHolder.appendChild(historyHandler.current);
+            }
+            const layerHolder = document.querySelector('.layers-holder') as HTMLElement;
+            if (layerHolder) {
+                layerHolder.appendChild(layerHandler.current);
+            }
+            const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
+            if (toolsHolder){
+                toolsHolder.appendChild(toolsHandler.current);
+            }
+            const workshopHolder = document.querySelector('.workshop') as HTMLElement;
+            if (workshopHolder){
+                workshopHolder.appendChild(toolPropertiesMenu.current);
+            }
+            const canvas = canvasRef.current;
+
+            Tool.canvas = canvas;
+            Tool.scale = currentScale.current; 
+            Tool.colorPrimary = inputPrimary.current.value;
+            Tool.colorSecondary = inputSecondary.current.value;
+            
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            createToolPropertiesMenuForm();
+            const savedFrames=localStorage.getItem("frames")
+            const currentFrame=localStorage.getItem("current_frame");
+            const currentLayer=localStorage.getItem("current_layer");
+            const storyboardConfig=localStorage.getItem("createFromStoryboard");
+            //From Template stuff
+            if (storyboardConfig){
+                const config = JSON.parse(storyboardConfig)
+                if(savedFrames && currentFrame && currentLayer){
+                    //Confirm overwrite menu beforehand
+                    var confirm = await getUserConfirmation();
+                }
+                //populate the project with the storyboard defaults
+                const frames = config.frames;
+                clearCanvas();
+                createLayer();
+                for(let i = 0; i < frames; i++){
+                    newFrame();
+                }
+                saveLayer();
+                saveFrame();
+                Tool.colorPrimary = "#000";
+                tools.get("pen")?.updateProperty("lineWidth", 10);
+                tools.get("pen")?.updateProperty("opacity", 0.5);
+                fps.current = 0.2;// 5 seconds per frame
+
+                //save it to local
+                saveToLocal();
+            }
+            
+            if(savedFrames && currentFrame && currentLayer){
+              loadFromLocal(currentFrame,currentLayer,savedFrames)  
+              drawBackground();
+                for (let i=0;i<frames.current.length;i++){
+                    addPreviewFrameToFramesHandler(i);
+                }
+                loadFrame(currentFrameIndex.current);
+                for (let i=0;i<canvasLayers.current.length;i++){
+                    addLayerPreview(i);
+                }
+                switchLayers(currentLayerIndex.current);
+            }
+            else{
+                clearCanvas();
+                clearOnionSkin();
+                drawBackground();
+                createLayer();
+                saveLayer();
+                addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
+                saveFrame();
+            }
+            
+            // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
+            moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
+        };
+
+        initialize();
+
         const removeUndo = window.historyAPI.onUndo(() => undo());
         const removeRedo = window.historyAPI.onRedo(() => redo());
         return () => {
@@ -1339,7 +1377,22 @@ function DrawingCanvas() {
         
         menuHolder.appendChild(form);
     }
-
+    function displayConfirmationMenu(){
+        if(!confirmationform.current)return;
+        
+        if(confirmationform.current.classList.contains("on")){
+            confirmationform.current.classList.remove('on');
+            confirmationform.current.classList.add('off');
+        }
+        else if(confirmationform.current.classList.contains("off")){
+            confirmationform.current.classList.remove('off');
+            confirmationform.current.classList.add('on');
+        }
+    }
+    async function getUserConfirmation(){
+        //Open the form
+        displayConfirmationMenu();
+    }
     return (
     
     <div className="drawingCanvasContainer">
@@ -1572,7 +1625,7 @@ function DrawingCanvas() {
                     ref={inputPrimary}
                     type="color"
                     id="primary-color"
-                    name="primary-color"
+                    name="primary-color" 
                     defaultValue="#e66465"
                     onChange={()=>{
                         Tool.colorPrimary = inputPrimary.current.value;
@@ -1604,12 +1657,12 @@ function DrawingCanvas() {
             </div>
         </div>
         <div className="pop-up" id="pop-up">
-                <div style={{width:"100%"}}><span className="close"onClick={()=>{
-                    const pop_up=document.getElementById("pop-up");
-                    pop_up.style.display="none";
-                }}>&#10006;</span>
-                </div>
-                <form onSubmit={(e)=>{
+            <div style={{width:"100%"}}><span className="close"onClick={()=>{
+                const pop_up=document.getElementById("pop-up");
+                pop_up.style.display="none";
+            }}>&#10006;</span>
+            </div>
+            <form onSubmit={(e)=>{
                     e.preventDefault();
                     const formData=new FormData(e.target as HTMLFormElement)
                     var string_angle=formData.get("angle") as string;
@@ -1618,13 +1671,26 @@ function DrawingCanvas() {
                     }>
                 <div className="pop_up_other"><label htmlFor="angle">Rotate Layer by:</label><br></br> </div>  
                 <div className="pop_up_middle">
-                <input type="number" id="angle" name="angle" min="0" max="360" className="pop_up_input">
-                </input>
-                &deg;
+                    <input type="number" id="angle" name="angle" min="0" max="360" className="pop_up_input">
+                    </input>
+                    &deg;
                 </div>
                 <div className="pop_up_other"><button className="pop_up_button" type="submit">Rotate Layer</button>
                 </div>
-                </form></div>
+            </form>
+        </div>
+        <div className="confirmationform off" id="storyboard-form-page" ref={confirmationform} >
+            <div className="confirmationform-form">
+                <h2>Overwrite Currently Open Project?</h2> 
+                <form id="storyboard_generate" onSubmit={(e)=>{
+                        e.preventDefault();
+                    }}>
+                <button type="submit" form="storyboard_generate" className="form-button">Yes</button>
+                <button className="form-button" onClick={displayConfirmMenu}>No</button>
+                </form>   
+            </div>
+                
+        </div>
     </div>
     );
 }

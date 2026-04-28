@@ -16,8 +16,8 @@ function Navigation( {name, url, id, conditional}:{name:string, url:string, id?:
                 return;
             }
             goTo(conditional);
-            return;
-        }
+            return; 
+        } 
         goTo(url);
     }
     return <>
