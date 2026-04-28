@@ -1579,7 +1579,15 @@ function DrawingCanvas() {
                     }}
                     />
                 </div>
-                <div className="colorInput colorInputSecondary">
+                <div className="colorInput colorInputSecondary" onClick={()=>{
+                    var newsecondary=Tool.colorPrimary;
+                    Tool.colorPrimary=Tool.colorSecondary;
+                    Tool.colorSecondary=newsecondary;
+                    if(!inputPrimary.current)return;
+                    inputPrimary.current.value=Tool.colorPrimary;
+                    if(!inputSecondary.current)return;
+                    inputSecondary.current.value=Tool.colorSecondary;
+                }}>
                     <input
                     height="100px"
                     width="100px"
@@ -1588,6 +1596,7 @@ function DrawingCanvas() {
                     id="secondary-color"
                     name="secondary-color"
                     defaultValue="oklab(50% 0.1 0.1 / 0.5)"
+                    style={{pointerEvents:'none'}}
                     onChange={()=>{
                         Tool.colorSecondary = inputSecondary.current.value;
                     }}
