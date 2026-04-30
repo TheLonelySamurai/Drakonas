@@ -6,12 +6,12 @@ import ProjectPage from './views/ProjectPage'
 import fs from 'fs';
 import AdmZip from 'adm-zip';
 import GifEncoder from 'gif-encoder';
-// import HME from 'h264-mp4-encoder';
+// import HME from 'h264-mp4-encoder'; 
 
 ipcMain.handle("save-to-zip", async (event, {fileName, data, layerSettings, toolSettings})=>{
    // 1. Let the user choose where to save the file
   const { filePath } = await dialog.showSaveDialog({
-    title: 'Save Project',
+    title: 'Save Project', 
     defaultPath: `${fileName}.drkns`, // Use your custom extension
     filters: [{ name: 'Custom Zip Files', extensions: ['drkns'] }]
   });
@@ -26,6 +26,16 @@ ipcMain.handle("save-to-zip", async (event, {fileName, data, layerSettings, tool
     // 3. Write the zip file to the chosen path 
     zip.writeZip(filePath);
     return { success: true, path: filePath };
+    /*
+    file = null
+    fs.readdir(temporaryDirectory, (err, files)=>{
+      if (err){
+        return (console.error("unable to scan directory" + err))
+      }
+      file = files[0]
+    })
+    Your stuff body: file
+    */
   }
   return { success: false };
 })

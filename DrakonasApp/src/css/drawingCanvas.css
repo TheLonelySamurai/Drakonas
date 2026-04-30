@@ -268,59 +268,150 @@
     }
     
 }
+.confirmationform{
+  background-color: var(--bg-card);
+  position: fixed;
+  display: none;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 15px;
+  padding: 15px;
+  border: 2px solid var(--border);
+}
+.on{
+  display: flex;
+}
+.off{
+  display: none;
+}
+.confirmationform-exitbutton{
+  position: absolute;
+  top: 0;
+  right: 0;
+  transform: translate(50%, -50%);
+  border-radius: 30px;
+  height:30px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  background-color: var(--bg-card);
+  border: 2px solid var(--border);
+  &:hover{
+    background-color:rgb(92, 92, 92);
+    border:solid rgb(92, 92, 92);
+    color: var(--text-light);
+  }
+}
+.confirmationform-form{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-around;
+} 
+.confirmationform form{
+  display: flex;
+  width: 100%;
+  align-items: space-around;
+  justify-content: space-around;
+
+}
+.form-determiner-display.on{
+  
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+}
+.form-determiner-display.off{
+  
+  display:none;
+}
+.confirm-form-button{
+  padding:5px;
+  height: 40px;
+  width: 100px;
+  text-align: center;
+  margin:10px 0 10px;
+  color:var(--text-light);
+  background-color:var(--bg-card);
+  border-style: solid;
+  border-color: var(--border);
+  border-radius:5px;
+  transition: all 0.2s ease-in-out;
+}
+.confirm-form-button:hover{
+  background-color:rgb(92, 92, 92);
+  border:solid rgb(92, 92, 92);
+  color: var(--text-light);
+  cursor: pointer;
+}
+
+.confirm-form-button.red:hover{
+  background-color:rgb(160, 81, 81);
+  border:solid rgb(160, 81, 81);
+  color: var(--text-light);
+  cursor: pointer;
+}
+.form-input{
+  width:50px;
+  height:40px;
+}
+
 .pop-up{
-        display:none;
-        position:fixed;
-        flex-direction:column;
-        justify-content:space-around;
-        align-items:center;
-        background-color:var(--bg-dark2);
-        top:25vh;
-        left:50vw;
-        border-radius:5px;
-        width:300px;
-        height:300px;
-    }
-    .close{
-        color:var(--text-light);
-        margin-left:270px;
-    }
-    .close:hover{
-        color:var(--text-muted);
-        cursor:pointer;
-    }
-    .pop_up_other{
-        display:flex;
-        justify-content:center;
-        height:50px;
-        text-align:center;
-        width:100%;
-    }
-    .pop_up_middle{
-        width:100%;
-        height:75px;
-        display:flex;
-        flex-direction:row;
-        justify-content:center;
-    }
-    .pop_up_button{
-        background-color:transparent;
-        border:2px solid var(--bg-light);
-        border-radius:5px;
-        color:var(--text-light);
-        margin-right:5px;
-    }
-    .pop_up_button:hover{
-        background-color:var(--bg-dark2);
-        margin-bottom:10px;
-    }
-    .pop_up_input{
-         border-radius: 8px;
-        border: 2px solid var(--text-light);
-        padding: 8px;
-         background-color: transparent;
-        text-align: center;
-        color: var(--text-light);
-        margin-right:5px;
-        height:50px;
-    }
+    display:none;
+    position:fixed;
+    flex-direction:column;
+    justify-content:space-around;
+    align-items:center;
+    background-color:var(--bg-dark2);
+    top:25vh;
+    left:50vw;
+    border-radius:5px;
+    width:300px;
+    height:300px;
+}
+.close{
+    color:var(--text-light);
+    margin-left:270px;
+}
+.close:hover{
+    color:var(--text-muted);
+    cursor:pointer;
+}
+.pop_up_other{
+    display:flex;
+    justify-content:center;
+    height:50px;
+    text-align:center;
+    width:100%;
+}
+.pop_up_middle{
+    width:100%;
+    height:75px;
+    display:flex;
+    flex-direction:row;
+    justify-content:center;
+}
+.pop_up_button{
+    background-color:transparent;
+    border:2px solid var(--bg-light);
+    border-radius:5px;
+    color:var(--text-light);
+    margin-right:5px;
+}
+.pop_up_button:hover{
+    background-color:var(--bg-dark2);
+    margin-bottom:10px;
+}
+.pop_up_input{
+        border-radius: 8px;
+    border: 2px solid var(--text-light);
+    padding: 8px;
+        background-color: transparent;
+    text-align: center;
+    color: var(--text-light);
+    margin-right:5px;
+    height:50px;
+}

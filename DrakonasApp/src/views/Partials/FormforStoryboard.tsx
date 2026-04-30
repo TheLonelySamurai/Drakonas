@@ -6,6 +6,7 @@ function StoryboardForm({name} : {name: String}){
     const durationDiv=useRef<HTMLDivElement| null>(null);
     const frameDiv=useRef<HTMLDivElement| null>(null);
     const storyboardform = useRef<HTMLDivElement | null>(null);
+    const noInputReceived = useRef<HTMLDivElement | null>(null);
     const [count,setCount] = useState(0)
     const navigate = useNavigate(); // Hook is called at the top level
     const goTo = (url:string) => {
@@ -58,7 +59,11 @@ function StoryboardForm({name} : {name: String}){
             frameDiv.current.classList.add("off"); 
         }
     }
+    function pleaseInputAResponse(){
+        if(!noInputReceived.current)return;
+        noInputReceived.current.style.display = "block";
 
+    }
     return(
         <>
             <button className="profile-toolbar-button"  onClick={displayStoryboardForm}>{name}</button>
@@ -70,7 +75,15 @@ function StoryboardForm({name} : {name: String}){
                     <form id="storyboard_generate" onSubmit={(e)=>{
                             e.preventDefault();
                             const obj = determineStoryboardFrames(e);
-                            localStorage.setItem("createFromStoryboard", JSON.stringify(obj));
+                            if (!obj){
+                                pleaseInputAResponse()
+                                return;
+                            } 
+                            if (obj.frames == 0){
+                                pleaseInputAResponse()
+                                return;
+                            } 
+                            localStorage.setItem("create-from-storyboard", JSON.stringify(obj));
                             goTo("/workshop");
                         }}>
                     <div id="duration" className="form-determiner-display on" ref={durationDiv}>
@@ -80,6 +93,9 @@ function StoryboardForm({name} : {name: String}){
                     <div id="frame" className="form-determiner-display off" ref={frameDiv}>
                         <label htmlFor="storyboardnum">How many storyboard frames do you want?</label><br></br>
                         <input type="number" id="storyboardnum" name="storyboardnum" className="form-input"></input><br></br>
+                    </div>
+                    <div className="no-input-received" ref={noInputReceived}>
+                        <p>Please input a response.</p>
                     </div>
                     <button type="submit" form="storyboard_generate" className="form-button">Create Storyboard</button>
                     </form>   

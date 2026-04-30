@@ -117,24 +117,11 @@ function DrawingCanvas() {
                 const config = JSON.parse(storyboardConfig)
                 if(savedFrames && currentFrame && currentLayer){
                     //Confirm overwrite menu beforehand
-                    var confirm = await getUserConfirmation();
+                    displayConfirmationMenu();
                 }
-                //populate the project with the storyboard defaults
-                const frames = config.frames;
-                clearCanvas();
-                createLayer();
-                for(let i = 0; i < frames; i++){
-                    newFrame();
+                else{
+                    loadStoryboardData();
                 }
-                saveLayer();
-                saveFrame();
-                Tool.colorPrimary = "#000";
-                tools.get("pen")?.updateProperty("lineWidth", 10);
-                tools.get("pen")?.updateProperty("opacity", 0.5);
-                fps.current = 0.2;// 5 seconds per frame
-
-                //save it to local
-                saveToLocal();
             }
             
             if(savedFrames && currentFrame && currentLayer){
@@ -833,6 +820,29 @@ function DrawingCanvas() {
 
             frames.current=rewritten_map;    
         }
+        //STORYBOARD
+        function loadStoryboardData(){
+            const c = localStorage.getItem("create-from-storyboard")
+            if (!c) return;
+            const config = JSON.parse(c);
+            //populate the pro  ject with the storyboard defaults
+            const frames = config.frames;
+            clearCanvas();
+            createLayer();
+            for(let i = 0; i < frames; i++){
+                newFrame();
+            }
+            saveLayer();
+            saveFrame();
+            Tool.colorPrimary = "#000";
+            tools.get("pen")?.updateProperty("lineWidth", 10);
+            tools.get("pen")?.updateProperty("opacity", 0.5);
+            fps.current = 0.2;// 5 seconds per frame
+
+            //save it to local
+            saveToLocal();
+        }
+
         //SAVE TOOL SETTINGS TO OBJECT
         function saveToolSettingsObj(){
             var toolProperties : [String, Object][] = [];
@@ -936,10 +946,10 @@ function DrawingCanvas() {
             });
 
             window.mainFunctions.createGif({
-            frames: frameData,
-            width: canvas.width,
-            height: canvas.height,
-            fps: 8
+                frames: frameData,
+                width: canvas.width,
+                height: canvas.height,
+                fps: fps.current
             });
         };
         //Use Effect specifically to tell the user the gif finished downloading, will replace alert later.
@@ -972,10 +982,10 @@ function DrawingCanvas() {
             });
 
             window.mainFunctions.createVid({
-            frames: frameData,
-            width: canvas.width,
-            height: canvas.height,
-            fps: 8
+                frames: frameData,
+                width: canvas.width,
+                height: canvas.height,
+                fps: fps.current
             });
         };
 
@@ -985,43 +995,6 @@ function DrawingCanvas() {
             alert("Video saved to your computer!");
         });
         }, []);
-    // function exportToGif(){
-    //     console.log("Exporting to GIF with frames: ", frames.current.length);
-    //     console.log("Frames data: ", frames.current);
-    //     const exportCanvas = document.createElement("canvas");
-    //     exportCanvas.width = 800;
-    //     exportCanvas.height = 600;
-    //     const exportCtx = exportCanvas.getContext("2d");
-    //     if (!exportCtx) return;
-
-    //     const gif = new GIF({
-    //         workers: 2,
-    //         quality: 10,
-    //         width: 800,
-    //         height: 600,
-    //         workerScript: '../other/gif.worker.js'
-    //     });
-
-    //     for (let i = 0; i < frames.current.length; i++) {  
-    //         exportCtx.clearRect(0, 0, exportCanvas.width, exportCanvas.height);
-    //         exportCtx.fillStyle = 'white';
-    //         exportCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-    //         drawFromAllLayers(exportCanvas, frames.current[i]);
-    //         gif.addFrame(exportCanvas, { delay: 500, copy: true });
-    //     }
-    //     gif.on('finished', function(blob) {
-    //         const url = URL.createObjectURL(blob);
-    //         // window.open(url);
-    //         const a = document.createElement('a');
-    //         a.href = url;
-    //         a.download = 'animation.gif';
-    //         a.click();
-    //         document.body.removeChild(a);
-    //     });
-    //     gif.render();
-    // }
-
-    
     
 //Mouse functions
     function getMousePos(e: React.MouseEvent<HTMLCanvasElement>) {
@@ -1393,6 +1366,7 @@ function DrawingCanvas() {
         //Open the form
         displayConfirmationMenu();
     }
+    
     return (
     
     <div className="drawingCanvasContainer">
@@ -1659,7 +1633,7 @@ function DrawingCanvas() {
         <div className="pop-up" id="pop-up">
             <div style={{width:"100%"}}><span className="close"onClick={()=>{
                 const pop_up=document.getElementById("pop-up");
-                pop_up.style.display="none";
+                pop_up!.style.display="none";
             }}>&#10006;</span>
             </div>
             <form onSubmit={(e)=>{
@@ -1682,14 +1656,14 @@ function DrawingCanvas() {
         <div className="confirmationform off" id="storyboard-form-page" ref={confirmationform} >
             <div className="confirmationform-form">
                 <h2>Overwrite Currently Open Project?</h2> 
-                <form id="storyboard_generate" onSubmit={(e)=>{
+                <form id="overwrite-saved-project" onSubmit={(e)=>{
                         e.preventDefault();
+                        loadStoryboardData();
                     }}>
-                <button type="submit" form="storyboard_generate" className="form-button">Yes</button>
-                <button className="form-button" onClick={displayConfirmMenu}>No</button>
+                <button type="submit" form="overwrite-saved-project" className="confirm-form-button red">Yes</button>
+                <a className="confirm-form-button" onClick={displayConfirmationMenu}>No</a>
                 </form>   
             </div>
-                
         </div>
     </div>
     );

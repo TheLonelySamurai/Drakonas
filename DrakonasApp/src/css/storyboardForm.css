@@ -77,3 +77,7 @@
   width:50px;
   height:40px;
 }
+.no-input-received{
+  display: none;
+  color: rgb(160, 81, 81);
+}
