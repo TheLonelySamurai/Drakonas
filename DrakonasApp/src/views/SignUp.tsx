@@ -8,10 +8,10 @@ function SignUp(){
             "Content-Type": "application/x-www-form-urlencoded"
             },
             body: new URLSearchParams({
-            name,
+            name, 
             email,
             username,
-            password
+            password 
             })
         });
 
@@ -21,7 +21,7 @@ function SignUp(){
         }
 
         return await response.text();
-    }
+    } 
     const [count,setCount] = useState(0)
     return(
     <div className="page login-window" id="signup-page">

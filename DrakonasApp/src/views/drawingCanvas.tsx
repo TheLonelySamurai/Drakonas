@@ -1621,7 +1621,7 @@ function DrawingCanvas() {
                 </div>
             </div>
         </div>
-
+ 
         <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
                 <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3></button></div>

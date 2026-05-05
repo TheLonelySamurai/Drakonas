@@ -63,41 +63,30 @@ ipcMain.handle("load-from-local-zip", async () =>{
 })
 ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings, toolSettings})=>{
   console.log("Save to Database");
-   // 1. Let the user choose where to save the file
-  const prefix='temp';
-  const temporaryDirectory=fs.mkdtempSync(path.join(os.tmpdir(),prefix));
-  if (temporaryDirectory) {
-    console.log("Got directory");
-    const zip = new AdmZip();
-    
-    // 2. Add content (e.g., a JSON file containing your React state)
     const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
-    zip.addFile("project.json", Buffer.from(content, "utf8"));
     
-    // 3. Write the zip file to the chosen path
-    zip.writeZip(temporaryDirectory);
-    console.log("File Wrote");
-    var file=null;
-    fs.readdir(temporaryDirectory,(err,files)=>{
-      if(err){
-        return (console.error("Unable to scan directory "+err));
-      }
-      file=files[0];
-    })
     const projectData=new FormData;
     projectData.append('project_name',fileName);
-     console.log("File found: "+(file==null));
-    if(file==null)return;
-    projectData.append('project_data',file);
-    const creation = await fetch('http://localhost:38451/api/create_project',{
+     console.log("File found: "+(content!=null));
+    if(content==null)return;
+    projectData.append('project_data',content);
+    //                           "http://localhost:38451/api/"
+    const creation = await fetch('http://localhost:38451/api/create-project',{
     method:'POST',
     headers:{
-      'Content-Type':'application.json',
+      'Content-Type':'application/x-www-form-urlencoded',
     },
-    body:projectData
+    body:new URLSearchParams({
+      project_name:fileName,
+      project_data:content
+    })
   });
-  return {success:true};
+  if (!creation.ok) {
+    const text = await creation.text();
+    throw new Error(text);
   }
+  return {success:true, data: await creation.json()};
+  
   return { success: false };
 })
 

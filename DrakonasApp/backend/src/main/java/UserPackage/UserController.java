@@ -1,11 +1,14 @@
 package UserPackage;
 
+import java.io.File;
+import java.io.InputStream;
 import java.util.*;
 import com.google.gson.Gson;
 import org.example.Main;
 import org.mindrot.jbcrypt.BCrypt;
 import Database.Database;
 
+import javax.servlet.http.Part;
 import java.sql.Array;
 import java.sql.Connection;
 import java.sql.Driver;
@@ -16,6 +19,7 @@ public class UserController {
     public static void retrieve(){
 
         get("/api/retrieve-user", (req, res) -> {
+            System.out.println("USER IS BEING REQUESTED");
             res.type("application/json");
             String manualId = req.headers("X-Session-ID");
             Object userData = null;
