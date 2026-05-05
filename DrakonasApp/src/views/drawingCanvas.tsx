@@ -852,6 +852,17 @@ function DrawingCanvas() {
                 toolSettings: object
             });
         }
+        //SAVE PROJECT TO DATABASE
+        async function saveToDatabase(){
+            var animationData = save();
+            var object = saveToolSettingsObj()
+            await window.mainFunctions.saveToDatabase({
+                fileName: "TestSave",
+                data: animationData,
+                layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                toolSettings: object
+            });
+        }
         //LOAD FROM ZIP
         async function loadFromZip(){
             try{
@@ -1497,6 +1508,12 @@ function DrawingCanvas() {
         }}>
             Clear Local Storage
         </button>
+        <button onClick={() => {
+            saveToDatabase();
+        }}>
+            Save to Database
+        </button>
+    
         </div>
         </div> 
         <div className='dc-vert-container' ref={framesHandler}></div>

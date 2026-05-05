@@ -4,6 +4,8 @@ import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import ProjectPage from './views/ProjectPage'
 import fs from 'fs';
+import os from 'os';
+import * as path from 'path';
 import AdmZip from 'adm-zip';
 import GifEncoder from 'gif-encoder';
 // import HME from 'h264-mp4-encoder';
@@ -59,7 +61,45 @@ ipcMain.handle("load-from-local-zip", async () =>{
     throw error;
   }
 })
-
+ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings, toolSettings})=>{
+  console.log("Save to Database");
+   // 1. Let the user choose where to save the file
+  const prefix='temp';
+  const temporaryDirectory=fs.mkdtempSync(path.join(os.tmpdir(),prefix));
+  if (temporaryDirectory) {
+    console.log("Got directory");
+    const zip = new AdmZip();
+    
+    // 2. Add content (e.g., a JSON file containing your React state)
+    const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
+    zip.addFile("project.json", Buffer.from(content, "utf8"));
+    
+    // 3. Write the zip file to the chosen path
+    zip.writeZip(temporaryDirectory);
+    console.log("File Wrote");
+    var file=null;
+    fs.readdir(temporaryDirectory,(err,files)=>{
+      if(err){
+        return (console.error("Unable to scan directory "+err));
+      }
+      file=files[0];
+    })
+    const projectData=new FormData;
+    projectData.append('project_name',fileName);
+     console.log("File found: "+(file==null));
+    if(file==null)return;
+    projectData.append('project_data',file);
+    const creation = await fetch('http://localhost:38451/api/create_project',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application.json',
+    },
+    body:projectData
+  });
+  return {success:true};
+  }
+  return { success: false };
+})
 
 ipcMain.on('generate-vid', async (event, {frames, width, height, fps})=> {
   
