@@ -27,4 +27,21 @@
  */
 
 
-import './app';
+// import './app';
+// // src/renderer.ts
+// import './index.css'; // Optional: import your global styles
+// import React from 'react';
+// import { createRoot } from 'react-dom/client';
+// import Project from '../src/views/ProjectPage'
+
+// // Target the 'root' div from your index.html
+// const container = document.getElementById('root');
+
+// if (container) {
+//   const root = createRoot(container);
+//   root.render(React.createElement(Project));
+// } else {
+//   console.error("Failed to find the root element");
+// }
+
+

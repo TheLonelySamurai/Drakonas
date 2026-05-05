@@ -191,7 +191,7 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 // reset the application menu to be the custom one that we setup
 Menu.setApplicationMenu(menu);
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
+if (require('electron-squirrel-startup')) { 
   app.quit();
 }
 

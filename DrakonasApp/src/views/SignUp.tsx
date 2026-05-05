@@ -2,7 +2,7 @@ import { useState } from 'react'
 import NavButton from './Partials/NavButton';
 function SignUp(){
     async function signup(name: string,email: string,username: string, password: string) {
-        const response = await fetch("http://localhost:38451/api/signup", {
+        const response = await fetch("http://localhost:38451/api/signup", { 
             method: "POST",
             headers: {
             "Content-Type": "application/x-www-form-urlencoded"
