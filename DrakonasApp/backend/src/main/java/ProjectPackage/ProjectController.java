@@ -1,6 +1,7 @@
 package ProjectPackage;
 import com.google.gson.Gson;
 import org.eclipse.jetty.util.ajax.JSON;
+import org.example.Main;
 import org.mindrot.jbcrypt.BCrypt;
 import Database.Database;
 
@@ -31,7 +32,7 @@ public class ProjectController {
             System.out.println("Data: "+ project_data);
             byte[] jsonBytes = project_data.getBytes(StandardCharsets.UTF_8);
             try (Connection conn = Database.connect();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO projects (project_name, project_data, create_date, last_modified) VALUES (?, ?, NOW(), NOW())")) {
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO projects (project_name, project_data, create_date, last_modified) VALUES (?, ?, NOW(), NOW()) ")) {
                 System.out.println("Info Stored");
                 pstmt.setString(1, project_name);
                 // Use setBinaryStream to efficiently handle large data
@@ -53,9 +54,39 @@ public class ProjectController {
                     projectSession.put("projectName", rs.getString("project_name"));
                     projectSession.put("projectLastModified", rs.getString("last_modified"));
                     req.session().attribute("project", projectSession);
+                    manualSessions.put(req.session().id(), projectSession);
+                    res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
+                    System.out.println((req.session().attribute("project")).toString());
+                    res.type("application/json");
+                    return new Gson().toJson(res);
                 }
             }
             return "File uploaded: " + project_name;
+        });
+        //Gets the currently open project IF it is from the database or returns null. If null, the current project should not be currently within the database.
+        get("/api/retrieve-current-project", (req, res) -> {
+            System.out.println("CURRENT PROJECT IS BEING REQUESTED");
+            res.type("application/json");
+            String manualId = req.headers("X-Session-ID");
+            Object projectData = null;
+
+            // 1. Try to get user from the manual store using the header
+            if (manualId != null) {
+                projectData = Main.manualSessions.get(manualId);
+            }
+
+            // 2. Fallback: Try the standard session (in case cookies actually worked)
+            if (projectData == null && req.session(false) != null) {
+                projectData = req.session().attribute("project]");
+            }
+
+            // 3. Return result or 401
+            if (projectData == null) {
+                res.status(401);
+                return "null"; // Or new Gson().toJson(Map.of("error", "Unauthorized"))
+            }
+
+            return new Gson().toJson(projectData);
         });
     }
 }
