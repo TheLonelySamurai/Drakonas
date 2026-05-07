@@ -54,17 +54,21 @@ public class ProjectController {
                     projectSession.put("projectName", rs.getString("project_name"));
                     projectSession.put("projectLastModified", rs.getString("last_modified"));
                     req.session().attribute("project", projectSession);
+                    // Create a response that includes the ID
+                    Map<String, Object> response = new HashMap<>(projectSession);
+                    response.put("sessionId", req.session().id());//Sends the ID to electron.
                     manualSessions.put(req.session().id(), projectSession);
+
                     res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
-                    System.out.println((req.session().attribute("project")).toString());
                     res.type("application/json");
-                    return new Gson().toJson(res);
+                    //Send the response that contains the ID as JSON
+                    return new Gson().toJson(response);
                 }
             }
             return "File uploaded: " + project_name;
         });
         //Gets the currently open project IF it is from the database or returns null. If null, the current project should not be currently within the database.
-        get("/api/retrieve-current-project", (req, res) -> {
+        get("/api/retrieve-current-project-info", (req, res) -> {
             System.out.println("CURRENT PROJECT IS BEING REQUESTED");
             res.type("application/json");
             String manualId = req.headers("X-Session-ID");
@@ -77,7 +81,7 @@ public class ProjectController {
 
             // 2. Fallback: Try the standard session (in case cookies actually worked)
             if (projectData == null && req.session(false) != null) {
-                projectData = req.session().attribute("project]");
+                projectData = req.session().attribute("project");
             }
 
             // 3. Return result or 401
