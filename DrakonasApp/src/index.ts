@@ -90,6 +90,35 @@ ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings,
   return { success: false };
 })
 
+ipcMain.handle("update-to-database", async (event, {projectId, fileName, data, layerSettings, toolSettings})=>{
+  console.log("Update to Database");
+    const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
+    
+    const projectData=new FormData;
+    projectData.append('project_name',fileName);
+     console.log("File found: "+(content!=null));
+    if(content==null)return;
+    projectData.append('project_data',content);
+    //                           "http://localhost:38451/api/"
+    const creation = await fetch('http://localhost:38451/api/save-project',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/x-www-form-urlencoded',
+    },
+    body:new URLSearchParams({
+      project_name:fileName,
+      project_data:content,
+      project_id: projectId
+    })
+  });
+  if (!creation.ok) {
+    const text = await creation.text();
+    throw new Error(text);
+  }
+  return {success:true};
+  
+  return { success: false };
+})
 ipcMain.on('generate-vid', async (event, {frames, width, height, fps})=> {
   
     // Initialize the encoder
