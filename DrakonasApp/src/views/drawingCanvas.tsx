@@ -1,10 +1,11 @@
 
 import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
-import {useNavigate} from 'react-router-dom';
+import {data, useNavigate} from 'react-router-dom';
 import { IconBase } from 'react-icons/lib';
 import { FaCog } from 'react-icons/fa';
 import '../css/drawingCanvas.css';
+import ProjectController from '../classes/ProjectController';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
@@ -99,9 +100,19 @@ function DrawingCanvas() {
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         createToolPropertiesMenuForm();
+        
+
+
         const savedFrames=localStorage.getItem("frames")
         const currentFrame=localStorage.getItem("current_frame");
         const currentLayer=localStorage.getItem("current_layer");
+        //Load From Database
+        const projectId = localStorage.getItem('load_project_from_id');
+        if (projectId) {
+            // Load project data from database
+            loadProjectFromDatabase(projectId);
+            localStorage.removeItem('load_project_from_id'); // Clear the flag after loading
+        }
         console.log(savedFrames);
         if(savedFrames && currentFrame && currentLayer){
           loadFromLocal(currentFrame,currentLayer,savedFrames)  
@@ -857,7 +868,7 @@ function DrawingCanvas() {
             var animationData = save();
             var object = saveToolSettingsObj()
             await window.mainFunctions.saveToDatabase({
-                fileName: "TestSave",
+                fileName: "TestSave1",
                 data: animationData,
                 layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
                 toolSettings: object
@@ -885,6 +896,33 @@ function DrawingCanvas() {
                 // Explicitly show the error message so we know what's happening
                 alert(`Load Error: ${error.message || error}`);
             }
+        }
+        //LOAD FROM DATABASE
+        async function loadProjectFromDatabase(projectId: string){
+            try{
+                const json = await ProjectController.loadProject(projectId);
+                const obj = JSON.parse(json);
+                if (obj){
+                    const sessionId = obj.sessionId;
+                    localStorage.setItem("my_session_id", sessionId);
+                    const data = JSON.parse(obj.projectData);
+                    loadFromLocal("0", "0", JSON.stringify(data.animationData));
+                    console.log(data.layerData);
+                    console.log(data.toolData);
+                    loadToolSettings(data.toolData);
+                    saveToLocal();
+                    //Redirect to the same page to reload.
+                    goTo("/workshop");
+                }
+                else{
+                    console.log("No Data");
+                }
+            }
+            catch(error: any){
+                console.error("Load failed:", error);
+                // Explicitly show the error message so we know what's happening
+                alert(`Load Error: ${error.message || error}`);
+            } 
         }
         //EXPORT TO GIF
         async function exportToGif(){ 
