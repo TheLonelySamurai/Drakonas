@@ -16,6 +16,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import static org.example.Main.manualSessions;
@@ -97,7 +98,7 @@ public class ProjectController {
 
           try(Connection conn=Database.connect();
               var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
-                  ResultSet rs = stmt.executeQuery("SELECT project_id,project_name,project_data,last modified FROM projects WHERE project_id = "+project_id+"");
+                  ResultSet rs = stmt.executeQuery("SELECT project_id,project_name,last_modified FROM projects WHERE project_id = "+project_id+"");
                   if(rs.next()){
                       req.session(true);
                       Map<String, Object>projectSession=new HashMap<>();
@@ -122,6 +123,24 @@ public class ProjectController {
           return "Project Not Loaded";
         }
         );
+        get("/api/load-projects",(req,res)->{
+            String user_id=req.queryParams("user_id");
+            ArrayList<Object> projects=new ArrayList<>();
+            try (Connection conn=Database.connect();
+                 var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
+                    ResultSet rs=stmt.executeQuery("SELECT project_id,project_name,project_data,last_modified FROM projects");
+                    while(rs.next()){
+                        Map<String,String> project= new HashMap<>();
+                        project.put("project_id",rs.getString("project_id"));
+                        project.put("project_name",rs.getString("project_name"));
+                        project.put("last_modified",rs.getString("last_modified"));
+                        projects.add(project);
+                    }
+                    Map<String,Object> response=new HashMap<>();
+                    response.put("projects",projects);
+                    return new Gson().toJson(response);
+            }
+        });
     }
 
 }
