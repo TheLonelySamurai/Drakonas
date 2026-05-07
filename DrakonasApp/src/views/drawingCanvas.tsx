@@ -608,7 +608,7 @@ function DrawingCanvas() {
                 layerDeleteButton.style.background = 'red';
                 layerDeleteButton.style.color = 'white';
                 layerDeleteButton.style.border = 'none';
-                layerDeleteButton.addEventListener('click', () => {
+                layerDeleteButton.addEventListener('click', () => { 
                     deleteLayer(currentLayerIndex.current); 
                 });
                 layerPreviewContainer.appendChild(layerDeleteButton);
@@ -864,15 +864,80 @@ function DrawingCanvas() {
             });
         }
         //SAVE PROJECT TO DATABASE
-        async function saveToDatabase(){
+        async function saveToDatabase(){//Saves or Creates a project depending on if there is a saved project ID to update, if there is not it creates a new project
             var animationData = save();
             var object = saveToolSettingsObj()
-            await window.mainFunctions.saveToDatabase({
-                fileName: "TestSave1",
-                data: animationData,
-                layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
-                toolSettings: object
-            });
+            var isNewProject = true;
+            if (!localStorage.getItem("my_session_id")){
+                console.log("isNewProject mysessionid: ", isNewProject);
+                // alert("No session ID found. Please log in to save your project.");
+                // return;
+                isNewProject = true;
+            }
+            else{
+                console.log("isNewProject: ", isNewProject);
+                var sessionData = await ProjectController.retrieveProjectInfo();
+                if (!sessionData){
+                    console.log("isNewProject !sessionData: ", isNewProject);
+                    // alert("No project ID found. Please create a new project to save.");
+                    // return;
+                    isNewProject = true;
+                }
+                else if (sessionData.projectId){
+                    isNewProject = false;
+                    localStorage.setItem("current_project_id", sessionData.projectId);
+                    localStorage.setItem("current_project_name", sessionData.projectName);
+                    localStorage.setItem("current_project_lastModified", sessionData.projectLastModified);
+                }
+                else if (!sessionData.projectId){
+                    if (localStorage.getItem("current_project_id")){
+                        isNewProject = false;
+                    }
+                    else{
+                        // alert("No project ID found. Please create a new project to save.");
+                        // return;
+                        console.log("isNewProject !sessionData.projectId but no current_project_id: ", isNewProject);
+                        isNewProject = true;
+                    }
+                }
+                
+
+            }
+            var res;
+            if (isNewProject){
+                console.log("Creating new project in database...");
+                console.log("current_project_id: ", localStorage.getItem("current_project_id"));
+                res = await window.mainFunctions.saveToDatabase({
+                    fileName: "TestSave1",
+                    data: animationData,
+                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                    toolSettings: object
+                });
+            } else{
+                console.log("Updating existing project in database...");
+                console.log("current_project_id: ", localStorage.getItem("current_project_id"));
+                res = await window.mainFunctions.updateToDatabase({
+                    projectId: localStorage.getItem("current_project_id"),
+                    fileName: "TestSave1",
+                    data: animationData,
+                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                    toolSettings: object
+                });
+            }
+            if (res.success){
+                // Handle success casei
+                if (res.data) {
+                    const data = res.data;
+            
+                    console.log("Project saved successfully with ID:", data.projectId);
+                    alert(`Project saved successfully with ID: ${data.projectName}`);
+                    localStorage.setItem("my_session_id", data.sessionId);
+                    localStorage.setItem("current_project_id", data.projectId);
+                    localStorage.setItem("current_project_name", data.projectName);
+                    localStorage.setItem("current_project_lastModified", data.projectLastModified);
+                }
+            }
+
         }
         //LOAD FROM ZIP
         async function loadFromZip(){

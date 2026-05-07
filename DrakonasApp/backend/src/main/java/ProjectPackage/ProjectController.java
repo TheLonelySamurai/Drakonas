@@ -68,6 +68,36 @@ public class ProjectController {
             }
             return "File uploaded: " + project_name;
         });
+
+        post("/api/save-project",(req,res) -> {
+            System.out.println("Project Saving");
+            String project_name = req.queryParams("project_name");
+            String project_data = req.queryParams("project_data");
+            String project_id = req.queryParams("project_id");
+            System.out.println("Name: " + project_name);
+            System.out.println("Data: " + project_data);
+            System.out.println("ID: " + project_id);
+            byte[] jsonBytes = project_data.getBytes(StandardCharsets.UTF_8);
+            try (Connection conn = Database.connect();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE projects\n" +
+                         "SET project_name = ?,\n" +
+                         "    project_data = ?,\n" +
+                         "    last_modified = NOW()\n" +
+                         "WHERE project_id = ?;\n")) {
+                System.out.println("Info Stored");
+                pstmt.setString(1, project_name);
+                // Use setBinaryStream to efficiently handle large data
+                System.out.println("Using Binary Stream For JSON");
+                pstmt.setBinaryStream(2, new java.io.ByteArrayInputStream(jsonBytes), jsonBytes.length);
+                pstmt.setString(3, project_id);
+                pstmt.executeUpdate();
+            } catch (Exception e) {
+                e.printStackTrace();
+                res.status(500);
+                return "Failed Try";
+            }
+            return new Gson().toJson("Success");
+        });
         //Gets the currently open project IF it is from the database or returns null. If null, the current project should not be currently within the database.
         get("/api/retrieve-current-project-info", (req, res) -> {
             System.out.println("CURRENT PROJECT IS BEING REQUESTED");

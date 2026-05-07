@@ -55,6 +55,7 @@ function ProjectPage(){
             <div className="projects-list">
                 <h1>Projects</h1>
                 <div className="projects-container" ref={container}>
+                <div className="projects-container" ref={container}>
                     <div className="project-card" onClick={()=>{
                         localStorage.setItem('load_project_from_id', '1');
                         goTo("/workshop");
