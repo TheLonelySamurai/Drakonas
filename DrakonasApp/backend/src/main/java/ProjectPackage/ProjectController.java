@@ -93,33 +93,43 @@ public class ProjectController {
 
             return new Gson().toJson(projectData);
         });
-        get("/api/load-project",(req,res)->{
-            String project_id=req.queryParams("project_id");
-
-          try(Connection conn=Database.connect();
+        get("/api/load-project/:project_id",(req,res)->{
+          String project_id = req.params(":project_id");
+          System.out.println("Project_id = " + project_id);
+          try(Connection conn = Database.connect();
               var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
-                  ResultSet rs = stmt.executeQuery("SELECT project_id,project_name,last_modified FROM projects WHERE project_id = "+project_id+"");
+                  ResultSet rs = stmt.executeQuery("SELECT project_id, project_name, project_data, last_modified FROM projects WHERE project_id = "+project_id+" ");
+                  System.out.println("Querying");
                   if(rs.next()){
+                      System.out.println("In");
                       req.session(true);
                       Map<String, Object>projectSession=new HashMap<>();
                       projectSession.put("projectId",rs.getString("project_id"));
                       projectSession.put("projectName",rs.getString("project_name"));
                       projectSession.put("projectLastModified",rs.getString("last_modified"));
+                      System.out.println("Project Data");
                       req.session().attribute("project",projectSession);
                       Map<String,Object> response=new HashMap<>(projectSession);
                       response.put("sessionId",req.session().id());
                       manualSessions.put(req.session().id(),projectSession);
+                      System.out.println("With Manual Sessions");
                       res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
                       res.type("application/json");
+                      System.out.println("Configured");
                       byte[] bytes = rs.getBytes("project_data");
                       String jsonData=null;
                       if (bytes != null) {
                           jsonData = new String(bytes, StandardCharsets.UTF_8);
                       }
                       response.put("projectData",jsonData);
+                      System.out.println("And sent project data");
                       return new Gson().toJson(response);
                   }
-              }
+          } catch (Exception e) {
+              e.printStackTrace();
+              res.status(500);
+              return "Failed Try";
+          }
           return "Project Not Loaded";
         }
         );
