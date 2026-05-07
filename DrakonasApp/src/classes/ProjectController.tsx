@@ -19,9 +19,20 @@ class ProjectController {
         return "";
       }
     }
-
+    public static async retrieveProjects():Promise<string>{
+        try{
+            const res= await fetch("http://localhost:38451/api/load-projects",{
+                method:'GET',      
+            });
+            const text=await res.text();
+            console.log(text);
+            return text;
+        }catch(err){
+            console.error("Backend not reachable: "+err);
+            return "";
+        }
+    }
     
-
     public static async loadProject(projectId: string): Promise<string> {
         try {
             const res = await fetch(`http://localhost:38451/api/load-project/${projectId}`, {
@@ -34,6 +45,6 @@ class ProjectController {
         console.error("Backend not reachable:", err);
         return "";
       }
-    } 
+    }
 }
 export default ProjectController;

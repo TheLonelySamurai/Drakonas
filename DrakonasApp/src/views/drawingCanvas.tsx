@@ -945,7 +945,7 @@ function DrawingCanvas() {
                 console.log(`Sending frame: Length ${pixelData.length}, Type: ${pixelData.constructor.name}`);
                 return pixelData;
             });
-
+            
             window.mainFunctions.createGif({
             frames: frameData,
             width: canvas.width,
