@@ -57,5 +57,36 @@ public class ProjectController {
             }
             return "File uploaded: " + project_name;
         });
+        get("/api/load-project",(req,res)->{
+            String project_id=req.queryParams("project_id");
+
+          try(Connection conn=Database.connect();
+              var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
+                  ResultSet rs = stmt.executeQuery("SELECT project_id,project_name,project_data,last modified FROM projects WHERE project_id = "+project_id+"");
+                  if(rs.next()){
+                      req.session(true);
+                      Map<String, Object>projectSession=new HashMap<>();
+                      projectSession.put("projectId",rs.getString("project_id"));
+                      projectSession.put("projectName",rs.getString("project_name"));
+                      projectSession.put("projectLastModified",rs.getString("last_modified"));
+                      req.session().attribute("project",projectSession);
+                      Map<String,Object> response=new HashMap<>(projectSession);
+                      response.put("sessionId",req.session().id());
+                      manualSessions.put(req.session().id(),projectSession);
+                      res.header("Set-Cookie", "JSESSIONID=" + req.session().id() + "; Path=/; HttpOnly; SameSite=Lax");
+                      res.type("application/json");
+                      byte[] bytes = rs.getBytes("project_data");
+                      String jsonData=null;
+                      if (bytes != null) {
+                          jsonData = new String(bytes, StandardCharsets.UTF_8);
+                      }
+                      response.put("projectData",jsonData);
+                      return new Gson().toJson(response);
+                  }
+              }
+          return "Project Not Loaded";
+        }
+        );
     }
+
 }
