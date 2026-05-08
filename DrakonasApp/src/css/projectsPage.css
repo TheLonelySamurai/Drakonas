@@ -1,7 +1,7 @@
 .projects-list{
     display: flex;
-    justify-content: center;
-    align-items: center;
+    justify-content: start;
+    align-items: start;
     flex-direction: column;
     margin: 30px;
 }
@@ -15,7 +15,6 @@
 }
 .project-card{
     width: 300px;
-    border: 1px solid #ccc;
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -24,4 +23,12 @@
 .project-card:hover{
     transform: translateY(-5px);
     cursor: pointer;
+}
+.project-card-temp-text{
+    background-color: var(--bg-card);
+    color: var(--bg-card);
+    width: fit-content;
+}
+.project-card.temp{
+    border: 1px solid var(--bg-card);
 }

@@ -29,7 +29,7 @@ class ProjectController {
             return text;
         }catch(err){
             console.error("Backend not reachable: "+err);
-            return "";
+            return JSON.stringify({});
         }
     }
     
