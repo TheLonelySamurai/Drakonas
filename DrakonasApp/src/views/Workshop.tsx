@@ -4,12 +4,13 @@ import NavButton from './Partials/NavButton';
 import DrawingCanvas from './drawingCanvas';
 
 // import GIF from 'gif.js';
-
+import Backend from '../callBackend';
 
 function Workshop(){
     const [count,setCount] = useState(0)
     return(
         <div className="page workshop" id="workshop-page">
+            <Backend/>
             <div className="toolbar">
                 
             </div>

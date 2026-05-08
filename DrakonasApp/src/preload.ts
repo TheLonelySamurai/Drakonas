@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld("mainFunctions", {
   onGifResult: (callback: any) => ipcRenderer.on("gif-finished", (_event, data) => callback(data)),
   onVidResult: (callback: any) => ipcRenderer.on("vid-finished", (_event, data) => callback(data)),
   saveToZip: (payload: { data: any, fileName: string }) => ipcRenderer.invoke('save-to-zip', payload),
+  saveToDatabase: (payload: { data: any, fileName: string }) => ipcRenderer.invoke('save-to-database', payload),
+  updateToDatabase: (payload: { data: any, fileName: string }) => ipcRenderer.invoke('update-to-database', payload),
   loadFromLocalZip: () => ipcRenderer.invoke("load-from-local-zip"),
   // onSaveProjectResult: (callback: any) => ipcRenderer.on("save-finished",(_event, data) => callback(data)),
 });

@@ -1,10 +1,11 @@
 
 import { useRef, useEffect } from 'react';
 import { Menu, webContents } from 'electron';
-import {useNavigate} from 'react-router-dom';
+import {data, useNavigate} from 'react-router-dom';
 import { IconBase } from 'react-icons/lib';
 import { FaCog } from 'react-icons/fa';
 import '../css/drawingCanvas.css';
+import ProjectController from '../classes/ProjectController';
 import Tool from "../classes/Tool";
 import Pen from "../classes/PenTool";
 import Line from "../classes/LineTool";
@@ -108,9 +109,19 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             createToolPropertiesMenuForm();
-            const savedFrames=localStorage.getItem("frames")
+            
+
+
+        const savedFrames=localStorage.getItem("frames")
             const currentFrame=localStorage.getItem("current_frame");
             const currentLayer=localStorage.getItem("current_layer");
+        //Load From Database
+        const projectId = localStorage.getItem('load_project_from_id');
+        if (projectId) {
+            // Load project data from database
+            loadProjectFromDatabase(projectId);
+            localStorage.removeItem('load_project_from_id'); // Clear the flag after loading
+        }
             const storyboardConfig=localStorage.getItem("createFromStoryboard");
             //From Template stuff
             if (storyboardConfig){
@@ -622,7 +633,7 @@ function DrawingCanvas() {
                 layerDeleteButton.style.background = 'red';
                 layerDeleteButton.style.color = 'white';
                 layerDeleteButton.style.border = 'none';
-                layerDeleteButton.addEventListener('click', () => {
+                layerDeleteButton.addEventListener('click', () => { 
                     deleteLayer(currentLayerIndex.current); 
                 });
                 layerPreviewContainer.appendChild(layerDeleteButton);
@@ -900,6 +911,82 @@ function DrawingCanvas() {
                 toolSettings: object
             });
         }
+        //SAVE PROJECT TO DATABASE
+        async function saveToDatabase(){//Saves or Creates a project depending on if there is a saved project ID to update, if there is not it creates a new project
+            var animationData = save();
+            var object = saveToolSettingsObj()
+            var isNewProject = true;
+            if (!localStorage.getItem("my_session_id")){
+                console.log("isNewProject mysessionid: ", isNewProject);
+                // alert("No session ID found. Please log in to save your project.");
+                // return;
+                isNewProject = true;
+            }
+            else{
+                console.log("isNewProject: ", isNewProject);
+                var sessionData = await ProjectController.retrieveProjectInfo();
+                if (!sessionData){
+                    console.log("isNewProject !sessionData: ", isNewProject);
+                    // alert("No project ID found. Please create a new project to save.");
+                    // return;
+                    isNewProject = true;
+                }
+                else if (sessionData.projectId){
+                    isNewProject = false;
+                    localStorage.setItem("current_project_id", sessionData.projectId);
+                    localStorage.setItem("current_project_name", sessionData.projectName);
+                    localStorage.setItem("current_project_lastModified", sessionData.projectLastModified);
+                }
+                else if (!sessionData.projectId){
+                    if (localStorage.getItem("current_project_id")){
+                        isNewProject = false;
+                    }
+                    else{
+                        // alert("No project ID found. Please create a new project to save.");
+                        // return;
+                        console.log("isNewProject !sessionData.projectId but no current_project_id: ", isNewProject);
+                        isNewProject = true;
+                    }
+                }
+                
+
+            }
+            var res;
+            if (isNewProject){
+                console.log("Creating new project in database...");
+                console.log("current_project_id: ", localStorage.getItem("current_project_id"));
+                res = await window.mainFunctions.saveToDatabase({
+                    fileName: "TestSave1",
+                    data: animationData,
+                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                    toolSettings: object
+                });
+            } else{
+                console.log("Updating existing project in database...");
+                console.log("current_project_id: ", localStorage.getItem("current_project_id"));
+                res = await window.mainFunctions.updateToDatabase({
+                    projectId: localStorage.getItem("current_project_id"),
+                    fileName: "TestSave1",
+                    data: animationData,
+                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                    toolSettings: object
+                });
+            }
+            if (res.success){
+                // Handle success casei
+                if (res.data) {
+                    const data = res.data;
+            
+                    console.log("Project saved successfully with ID:", data.projectId);
+                    alert(`Project saved successfully with ID: ${data.projectName}`);
+                    localStorage.setItem("my_session_id", data.sessionId);
+                    localStorage.setItem("current_project_id", data.projectId);
+                    localStorage.setItem("current_project_name", data.projectName);
+                    localStorage.setItem("current_project_lastModified", data.projectLastModified);
+                }
+            }
+
+        }
         //LOAD FROM ZIP
         async function loadFromZip(){
             try{
@@ -923,6 +1010,33 @@ function DrawingCanvas() {
                 alert(`Load Error: ${error.message || error}`);
             }
         }
+        //LOAD FROM DATABASE
+        async function loadProjectFromDatabase(projectId: string){
+            try{
+                const json = await ProjectController.loadProject(projectId);
+                const obj = JSON.parse(json);
+                if (obj){
+                    const sessionId = obj.sessionId;
+                    localStorage.setItem("my_session_id", sessionId);
+                    const data = JSON.parse(obj.projectData);
+                    loadFromLocal("0", "0", JSON.stringify(data.animationData));
+                    console.log(data.layerData);
+                    console.log(data.toolData);
+                    loadToolSettings(data.toolData);
+                    saveToLocal();
+                    //Redirect to the same page to reload.
+                    goTo("/workshop");
+                }
+                else{
+                    console.log("No Data");
+                }
+            }
+            catch(error: any){
+                console.error("Load failed:", error);
+                // Explicitly show the error message so we know what's happening
+                alert(`Load Error: ${error.message || error}`);
+            } 
+        }
         //EXPORT TO GIF
         async function exportToGif(){ 
             const canvas = document.createElement('canvas');
@@ -944,7 +1058,7 @@ function DrawingCanvas() {
                 console.log(`Sending frame: Length ${pixelData.length}, Type: ${pixelData.constructor.name}`);
                 return pixelData;
             });
-
+            
             window.mainFunctions.createGif({
                 frames: frameData,
                 width: canvas.width,
@@ -1524,6 +1638,12 @@ function DrawingCanvas() {
         }}>
             Clear Local Storage
         </button>
+        <button onClick={() => {
+            saveToDatabase();
+        }}>
+            Save to Database
+        </button>
+    
         </div>
         </div> 
         <div className='dc-vert-container' ref={framesHandler}></div>
@@ -1606,7 +1726,15 @@ function DrawingCanvas() {
                     }}
                     />
                 </div>
-                <div className="colorInput colorInputSecondary">
+                <div className="colorInput colorInputSecondary" onClick={()=>{
+                    var newsecondary=Tool.colorPrimary;
+                    Tool.colorPrimary=Tool.colorSecondary;
+                    Tool.colorSecondary=newsecondary;
+                    if(!inputPrimary.current)return;
+                    inputPrimary.current.value=Tool.colorPrimary;
+                    if(!inputSecondary.current)return;
+                    inputSecondary.current.value=Tool.colorSecondary;
+                }}>
                     <input
                     height="100px"
                     width="100px"
@@ -1615,6 +1743,7 @@ function DrawingCanvas() {
                     id="secondary-color"
                     name="secondary-color"
                     defaultValue="oklab(50% 0.1 0.1 / 0.5)"
+                    style={{pointerEvents:'none'}}
                     onChange={()=>{
                         Tool.colorSecondary = inputSecondary.current.value;
                     }}
@@ -1622,7 +1751,7 @@ function DrawingCanvas() {
                 </div>
             </div>
         </div>
-
+ 
         <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
                 <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3></button></div>

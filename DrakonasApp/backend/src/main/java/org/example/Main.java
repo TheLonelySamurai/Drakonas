@@ -6,6 +6,7 @@ import AuthPackage.AuthController;
 import Database.Database;
 import UserPackage.UserController;
 import com.google.gson.Gson;
+import ProjectPackage.ProjectController;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -64,6 +65,7 @@ public class Main {
         });
         AuthController.register();
         UserController.retrieve();
+        ProjectController.projectHandler();
         after((req, res) -> {
             // Only modify the cookie if a session exists
             if (req.session(false) != null) {

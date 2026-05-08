@@ -19,7 +19,7 @@ const template = [
         ]
       }]
     : []),
-  // { role: 'fileMenu' }
+  // { role: 'fileMenu' } 
   {
     label: 'Drakonas',
     submenu: [
