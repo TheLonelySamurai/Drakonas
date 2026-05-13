@@ -18,8 +18,8 @@ function App() {
     useEffect(()=>{
         window.menuNav.onReturnHome(() => {
             console.log("Home?");
-            localStorage.removeItem("post_login_action");
-            goHome()});
+            localStorage.removeItem("post_login_action"); 
+            goHome()}); 
     }, []); 
         
     const goHome = () => {

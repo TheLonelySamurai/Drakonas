@@ -1,9 +1,9 @@
-
-import { useRef, useEffect, lazy, Suspense } from 'react';
+/// <reference path="../renderer.d.ts" />
+import { useRef, useEffect, lazy, Suspense, ComponentType } from 'react';
 import { Menu, webContents } from 'electron';
 import {data, useNavigate} from 'react-router-dom';
 import { IconBase } from 'react-icons/lib';
-const FaCog = lazy(() => import('react-icons/fa').then(m => ({ default: m.FaCog })));
+const FaCog = lazy(() => import('react-icons/fa').then(m => ({ default: m.FaCog as ComponentType<{ id?: string }> })));
 import '../css/drawingCanvas.css';
 import ProjectController from '../classes/ProjectController';
 import Tool from "../classes/Tool";
@@ -276,9 +276,10 @@ function DrawingCanvas() {
         //Clear all layers's canvases
         if (layersDivRef.current) {
             const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas');
-            canvasLayerElements.forEach((canvas) => {
+            canvasLayerElements.forEach((el) => {
+                const canvas = el as HTMLCanvasElement;
                 const ctx = canvas.getContext('2d');
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
             });
         }
 
@@ -335,6 +336,14 @@ function DrawingCanvas() {
         window.mainFunctions.onMenuImport(() => { loadFromZip(); });
         window.mainFunctions.onMenuExportGif(() => { exportToGif(); });
         window.mainFunctions.onMenuExportMp4(() => { exportToVid(); });
+
+        const pending = localStorage.getItem('pending_menu_action');
+        if (pending) {
+            localStorage.removeItem('pending_menu_action');
+            if (pending === 'import') loadFromZip();
+            else if (pending === 'save-local') saveToLocal();
+            else if (pending === 'save-database') saveToDatabase();
+        }
     }, []);
     //Save to memory function 
 
@@ -717,7 +726,7 @@ function DrawingCanvas() {
                 map.forEach(function (value, key){
                     // console.log("KEY: " + key + " | VALUE: " + value)
 
-                    if (value.path == null)return;
+                    if ((value as any).path == null)return;
                     if(key.isEraser){
                         ctx.globalCompositeOperation = 'destination-out';
                     }
@@ -732,7 +741,7 @@ function DrawingCanvas() {
                     ctx.lineWidth = key.lineWidth;
                     ctx.lineCap  = key.lineCap;
                     if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                    ctx.stroke(value.path);
+                    ctx.stroke((value as any).path);
                     if (key.angle!=null){
                         ctx.restore();
                     }
@@ -854,15 +863,15 @@ function DrawingCanvas() {
                 if(canvasLayerElements[i].id==`Mainlayer-${currentLayerIndex.current+1}`){
                     console.log(`Mainlayer-${currentLayerIndex.current+1}`);
         
-                    const canvas=canvasLayerElements[i];
+                    const canvas = canvasLayerElements[i] as HTMLCanvasElement;
                     drawAnyCanvas(canvas, paths.current);
                     continue;
                 }
                 if (canvasLayerElements[i].id==`Mainlayer-${index+1}`){
                     console.log(""+canvasLayerElements[i].id+" Index not console index")
-                    const canvas=canvasLayerElements[i];
-                    const ctx=canvasLayerElements[i].getContext('2d');
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const canvas = canvasLayerElements[i] as HTMLCanvasElement;
+                    const ctx = canvas.getContext('2d');
+                    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
                 }
             }
             
@@ -929,7 +938,7 @@ function DrawingCanvas() {
                         path.forEach((value,key)=>{
                             var object={
                                 stroke:JSON.stringify(key),
-                                path:value.svgStr
+                                path:(value as any).svgStr
                             };
                             path_map.push(object);
                         })
@@ -975,7 +984,7 @@ function DrawingCanvas() {
             currentLayerIndex.current=JSON.parse(currentLayer);
             const rewritten_map: any[]=[];
             const current_frames=JSON.parse(savedFrames);
-            current_frames.forEach((layer)=>
+            current_frames.forEach((layer: any) =>
             {
                 const layers:any[]=[];
                for(let i=0;i<layer.length;i++){
@@ -1130,7 +1139,7 @@ function DrawingCanvas() {
                 fps: fps.current
             }
             await window.mainFunctions.saveToZip({
-                fileName: projectTitle.current,
+                fileName: String(projectTitle.current ?? ''),
                 data: animationData,
                 layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
                 toolSettings: object,
@@ -1671,7 +1680,7 @@ function DrawingCanvas() {
         const properties = tool.exportPropertiesForm();
         const propertyKeys = Object.keys(properties).sort((a, b) => parseInt(a) - parseInt(b));
         propertyKeys.forEach(key => {
-            const property = properties[key];
+            const property = (properties as any)[key];
             const type = property.type;
             console.log("Creating input for property: ", property, "From key: ", key);
             const label = document.createElement('label');
@@ -1715,14 +1724,16 @@ function DrawingCanvas() {
                         tool.updateProperty(property.name, input.value);
                     });
                     break;
-                case "checkbox":
-                    input = document.createElement('input');
-                    input.type = 'checkbox';
-                    input.checked = type.defaultValue || false;
-                    input.addEventListener('change', () => {
-                        tool.updateProperty(property.name, input.checked);
+                case "checkbox": {
+                    const cbInput = document.createElement('input');
+                    cbInput.type = 'checkbox';
+                    cbInput.checked = type.defaultValue || false;
+                    cbInput.addEventListener('change', () => {
+                        tool.updateProperty(property.name, cbInput.checked);
                     });
+                    input = cbInput;
                     break;
+                }
                 default:
                     console.warn(`Unknown property type: ${property.type}`);
             }
@@ -1739,7 +1750,7 @@ function DrawingCanvas() {
         }
         
         var r = document.querySelector(':root');
-        r.style.setProperty('--menu-height', `${menuHeight}px`);
+        (r as HTMLElement).style.setProperty('--menu-height', `${menuHeight}px`);
         menuContainer.style.height = `var(--menu-height)`;
         menuContainer.style.overflowY = (propertyKeys.length * 60 + 200) > 500 ? 'scroll' : 'hidden';
         
@@ -2125,9 +2136,9 @@ function DrawingCanvas() {
                     Tool.colorPrimary=Tool.colorSecondary;
                     Tool.colorSecondary=newsecondary;
                     if(!inputPrimary.current)return;
-                    inputPrimary.current.value=Tool.colorPrimary;
+                    inputPrimary.current.value=Tool.colorPrimary as string;
                     if(!inputSecondary.current)return;
-                    inputSecondary.current.value=Tool.colorSecondary;
+                    inputSecondary.current.value=Tool.colorSecondary as string;
                 }}>
                     <input
                     height="100px"

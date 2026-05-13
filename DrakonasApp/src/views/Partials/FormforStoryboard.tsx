@@ -29,14 +29,14 @@ function StoryboardForm({name} : {name: String}){
         var duration: number | null;
         var frames: number | null;
         if(durationDiv.current.classList.contains("on")){
-        duration=formData.get("storyboard_duration") as number | null;
+        duration=formData.get("storyboard_duration") as unknown as number | null;
         if(duration==null){
             duration=5;
         }
         frames=Math.trunc(duration/5);        
         }
         else{
-            frames=formData.get("storyboardnum") as number | null;
+            frames=formData.get("storyboardnum") as unknown as number | null;
             if (frames==null){
                 frames=1;
             }

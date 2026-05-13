@@ -11,7 +11,7 @@ function ProfilePage(){
         navigate(url); 
     };
     const [count,setCount] = useState(0)
-    async function getJSONUserData():Promise<JSON>{
+    async function getJSONUserData():Promise<any>{
         var userData = await UserController.retrieveUser();
         if (userData != null){
             return JSON.parse(userData);
@@ -23,8 +23,8 @@ function ProfilePage(){
         var data = getJSONUserData();
         data.then(function(user){
             if (user && user != "null" && user != undefined){
-                document.getElementById('pf-page-username').innerHTML = user.username;
-                document.getElementById('pf-page-email').innerHTML = user.email;
+                document.getElementById('pf-page-username')!.innerHTML = user.username;
+                document.getElementById('pf-page-email')!.innerHTML = user.email;
             }
             else{
                 goTo("/login");

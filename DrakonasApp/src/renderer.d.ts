@@ -1,10 +1,10 @@
-export interface IMainFunctions {
+interface IMainFunctions {
   onLoginWindow: () => void;
-  createGif: (frames: any[]) => void;
-  createVid: (frames: any[]) => void;
+  createGif: (payload: any) => void;
+  createVid: (payload: any) => void;
   onGifResult: (callback: (data: any) => void) => void;
   onVidResult: (callback: (data: any) => void) => void;
-  saveToZip: (payload: { data: any, fileName: string }) => Promise<any>;
+  saveToZip: (payload: any) => Promise<any>;
   saveToDatabase: (payload: any) => Promise<any>;
   updateToDatabase: (payload: any) => Promise<any>;
   loadFromLocalZip: () => Promise<any>;
@@ -15,16 +15,14 @@ export interface IMainFunctions {
   onMenuExportMp4: (cb: () => void) => void;
 }
 
-declare global {
-  interface Window {
-    mainFunctions: IMainFunctions;
-    menuNav: {
-      onReturnHome: (callback: () => void) => void;
-      onReturnToWorkshop: (callback: () => void) => void;
-    };
-    historyAPI: {
-      onUndo: (callback: () => void) => () => void;
-      onRedo: (callback: () => void) => () => void;
-    };
-  }
+interface Window {
+  mainFunctions: IMainFunctions;
+  menuNav: {
+    onReturnHome: (callback: () => void) => void;
+    onReturnToWorkshop: (callback: () => void) => void;
+  };
+  historyAPI: {
+    onUndo: (callback: () => void) => () => void;
+    onRedo: (callback: () => void) => () => void;
+  };
 }

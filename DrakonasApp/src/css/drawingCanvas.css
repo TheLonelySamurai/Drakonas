@@ -129,7 +129,7 @@
     position: absolute;
     bottom: calc(-1*(var(--menu-height) - 100px));
     left: 0;
-    width: calc(20vw + 103px);
+    width: calc(13vw + 103px); 
     height: var(--menu-height);
     background-color: var(--bg-dark2);
     border-top: 4px solid var(--border);

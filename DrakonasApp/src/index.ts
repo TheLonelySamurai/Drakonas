@@ -4,8 +4,6 @@ import { spawn, ChildProcess } from "child_process";
 import path from "path";
 import ProjectPage from './views/ProjectPage'
 import fs from 'fs';
-import os from 'os';
-import * as path from 'path';
 import AdmZip from 'adm-zip';
 import GifEncoder from 'gif-encoder';
 // import HME from 'h264-mp4-encoder'; 
@@ -59,7 +57,7 @@ ipcMain.handle("load-from-local-zip", async () =>{
 
     if (!zipEntry) {
       // This helps you debug: it lists what IS actually inside the zip
-      const entries = zip.getEntries().map(e => e.entryName);
+      const entries = zip.getEntries().map((e: any) => e.entryName);
       throw new Error(`Entry "project.json" not found. Contents: ${entries.join(', ')}`);
     }
     if (!zipEntry) throw new Error("Invalid project file: project.json missing.");
@@ -144,7 +142,7 @@ ipcMain.on('generate-vid', async (event, {frames, width, height, fps})=> {
     encoder.initialize();
 
     // Add each frame of pixel data
-    frames.forEach(frameData => {
+    frames.forEach((frameData: any) => {
         encoder.addFrameRgba(frameData);
     });
 
@@ -214,8 +212,12 @@ ipcMain.on('generate-gif', (event, { frames, width, height, fps }) => {
 let javaProcess: ChildProcess | null = null;
 
 function startJavaBackend() {
-  const jarPath = path.join(process.resourcesPath, "backend.jar");
-  const gcpKeyPath = path.join(process.resourcesPath, "gcp-key.json");
+  const jarPath = app.isPackaged
+    ? path.join(process.resourcesPath, "backend.jar")
+    : path.join(__dirname, "../../resources/backend.jar");
+  const gcpKeyPath = app.isPackaged
+    ? path.join(process.resourcesPath, "gcp-key.json")
+    : path.join(__dirname, "../../resources/gcp-key.json");
 
   javaProcess = spawn("java", ["-jar", jarPath], {
     env: {
@@ -228,7 +230,7 @@ function startJavaBackend() {
   });
 
   javaProcess.stdout.on("data", (data: any) => {
-    console.log("[JAVA]", data.toString());
+    console.log("[JAVA]", data.toString()); 
   });
 
   javaProcess.stderr.on("data", (data: any) => {
@@ -303,10 +305,13 @@ app.commandLine.appendSwitch(
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
-  
-  startJavaBackend();
-  await waitForBackend();
-  
+  try {
+    startJavaBackend();
+    await waitForBackend();
+  } catch (e) {
+    console.error("[BACKEND]", e);
+  }
+
   var win = createWindow()
 
   // This ensures Electron doesn't strip the cookie when moving between ports

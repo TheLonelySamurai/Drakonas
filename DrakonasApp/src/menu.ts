@@ -32,12 +32,10 @@ const template = [
         {
             label: 'Import',
             click: async () =>{
-                console.log("Import Clicked!")
-                //This should open a file dialog to open a .drkns file
-                //Functoinality is implemented, just not in the menu yet
-                BrowserWindow.getFocusedWindow()?.webContents.send('workshop');//Go to workshop page to load project from local .drkns file
-
-                BrowserWindow.getFocusedWindow()?.webContents.send('load-from-local-zip');//This is the actual loading function
+                const win = BrowserWindow.getFocusedWindow();
+                if (!win) return;
+                await win.webContents.executeJavaScript(`localStorage.setItem('pending_menu_action', 'import')`);
+                win.webContents.send('workshop');
             }
         },
         {
@@ -49,19 +47,19 @@ const template = [
               {
                 label: 'Save to Local',
                 click: async () =>{
-                    console.log("Save to Local Clicked!")
-                  //This should open a file dialog to save a .drkns file
-                  //Functoinality is implemented, just not in the menu yet
-                  BrowserWindow.getFocusedWindow()?.webContents.send('workshop');//Go to workshop page to load project from local .drkns file
-
-                  BrowserWindow.getFocusedWindow()?.webContents.send('save-to-local-zip');//This is the actual saving function
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (!win) return;
+                    await win.webContents.executeJavaScript(`localStorage.setItem('pending_menu_action', 'save-local')`);
+                    win.webContents.send('workshop');
                 }
               },
               {
                 label: 'Save to Database',
                 click: async () =>{
-                  BrowserWindow.getFocusedWindow()?.webContents.send('workshop');
-                  BrowserWindow.getFocusedWindow()?.webContents.send('save-to-database-menu');
+                    const win = BrowserWindow.getFocusedWindow();
+                    if (!win) return;
+                    await win.webContents.executeJavaScript(`localStorage.setItem('pending_menu_action', 'save-database')`);
+                    win.webContents.send('workshop');
                 }
               }
             ]

@@ -1,6 +1,6 @@
 import {useRef, useEffect} from 'react'
 import { useState } from 'react'
-import ChangeHolder from './Partials/Holder'
+import ChangeHolder from './Holder'
 function WorkshopFrames(){
     const [count,setCount] = useState(0)
     const framesHandler=useRef<HTMLDivElement | null>(null);
