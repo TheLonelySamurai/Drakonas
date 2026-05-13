@@ -13,10 +13,14 @@
     justify-content: center;
     gap: 20px;
 }
+.current-project-card{
+    margin: 30px;
+}
 .project-card{
     width: 300px;
     border-radius: 8px;
     padding: 16px;
+    border: solid 2px var(--text-light);
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: transform 0.2s;
 }

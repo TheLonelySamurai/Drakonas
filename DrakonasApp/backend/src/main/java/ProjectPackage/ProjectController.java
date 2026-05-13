@@ -19,6 +19,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+
 import static org.example.Main.manualSessions;
 import static spark.Spark.*;
 import com.fasterxml.jackson.databind.ObjectMapper; // Example JSON library
@@ -29,16 +31,27 @@ public class ProjectController {
             System.out.println("Project Creating");
             String project_name=req.queryParams("project_name");
             String project_data= req.queryParams("project_data");
+            String user_id = req.queryParams("user_id");
+            String user_session = req.queryParams("user_session");
+            //Verify User against session
+            Map<String, Object> user = manualSessions.get(user_session);
+            if (!Objects.equals(user.get("userId").toString(), user_id)){
+                System.out.println("User not verified");
+                res.status(401);
+                return "User not authorized";
+            }
+
             System.out.println("Name: "+ project_name);
             System.out.println("Data: "+ project_data);
             byte[] jsonBytes = project_data.getBytes(StandardCharsets.UTF_8);
             try (Connection conn = Database.connect();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO projects (project_name, project_data, create_date, last_modified) VALUES (?, ?, NOW(), NOW()) ")) {
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO projects (project_name, project_data, create_date, last_modified, user_id) VALUES (?, ?, NOW(), NOW(), ?) ")) {
                 System.out.println("Info Stored");
                 pstmt.setString(1, project_name);
                 // Use setBinaryStream to efficiently handle large data
                 System.out.println("Using Binary Stream For JSON");
                 pstmt.setBinaryStream(2, new java.io.ByteArrayInputStream(jsonBytes), jsonBytes.length);
+                pstmt.setString(3, user_id);
                 pstmt.executeUpdate();
             }catch(Exception e){
                 e.printStackTrace();
@@ -46,8 +59,10 @@ public class ProjectController {
                 return "Failed Try";
             }
             try(Connection conn = Database.connect();
-                var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
-                ResultSet rs = stmt.executeQuery("SELECT project_id, project_name, last_modified FROM projects ORDER BY last_modified DESC");
+                PreparedStatement pstmt = conn.prepareStatement("SELECT project_id, project_name, last_modified FROM projects WHERE user_id = ? AND project_name = ? ORDER BY last_modified DESC")){
+                    pstmt.setString(1, user_id);
+                    pstmt.setString(2, project_name);
+                    ResultSet rs = pstmt.executeQuery();
                 if (rs.next()){
                     req.session(true);
                     Map<String, Object> projectSession = new HashMap<>();
@@ -74,6 +89,7 @@ public class ProjectController {
             String project_name = req.queryParams("project_name");
             String project_data = req.queryParams("project_data");
             String project_id = req.queryParams("project_id");
+            String user_id = req.queryParams("user_id");
             System.out.println("Name: " + project_name);
             System.out.println("Data: " + project_data);
             System.out.println("ID: " + project_id);
@@ -83,13 +99,15 @@ public class ProjectController {
                          "SET project_name = ?,\n" +
                          "    project_data = ?,\n" +
                          "    last_modified = NOW()\n" +
-                         "WHERE project_id = ?;\n")) {
+                         "WHERE project_id = ?" +
+                         "AND user_id = ?\n")) {
                 System.out.println("Info Stored");
                 pstmt.setString(1, project_name);
                 // Use setBinaryStream to efficiently handle large data
                 System.out.println("Using Binary Stream For JSON");
                 pstmt.setBinaryStream(2, new java.io.ByteArrayInputStream(jsonBytes), jsonBytes.length);
                 pstmt.setString(3, project_id);
+                pstmt.setString(4, user_id);
                 pstmt.executeUpdate();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -123,12 +141,15 @@ public class ProjectController {
 
             return new Gson().toJson(projectData);
         });
-        get("/api/load-project/:project_id",(req,res)->{
+        get("/api/load-project/:user_id/:project_id",(req,res)->{
+          String user_id = req.params(":user_id");
           String project_id = req.params(":project_id");
           System.out.println("Project_id = " + project_id);
           try(Connection conn = Database.connect();
-              var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
-                  ResultSet rs = stmt.executeQuery("SELECT project_id, project_name, project_data, last_modified FROM projects WHERE project_id = "+project_id+" ");
+              PreparedStatement pstmt  = conn.prepareStatement("SELECT project_id, project_name, project_data, last_modified FROM projects WHERE project_id = ? AND user_id = ?")){
+                  pstmt.setString(1, project_id);
+                  pstmt.setString(2, user_id);
+                  ResultSet rs = pstmt.executeQuery();
                   System.out.println("Querying");
                   if(rs.next()){
                       System.out.println("In");
@@ -163,12 +184,13 @@ public class ProjectController {
           return "Project Not Loaded";
         }
         );
-        get("/api/load-projects",(req,res)->{
-            String user_id=req.queryParams("user_id");
+        get("/api/load-projects/:user_id",(req,res)->{
+            String user_id=req.params("user_id");
             ArrayList<Object> projects=new ArrayList<>();
             try (Connection conn=Database.connect();
-                 var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)){
-                    ResultSet rs=stmt.executeQuery("SELECT project_id,project_name,project_data,last_modified FROM projects");
+                 PreparedStatement pstmt = conn.prepareStatement("SELECT project_id,project_name,last_modified FROM projects WHERE user_id = ?")){
+                    pstmt.setString(1, user_id);
+                    ResultSet rs=pstmt.executeQuery();
                     while(rs.next()){
                         Map<String,String> project= new HashMap<>();
                         project.put("project_id",rs.getString("project_id"));

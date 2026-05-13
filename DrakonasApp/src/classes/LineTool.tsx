@@ -85,7 +85,7 @@ class Line extends Tool{
             
         }
     }
-    exportProperties(): JSON {
+    exportPropertiesForm(): JSON {
         return JSON.parse(JSON.stringify({
             0: {"name": "Line Width" ,
                 "type": {"type": "number", "min": 1, "max": 1000, "step": 1}},
@@ -94,6 +94,19 @@ class Line extends Tool{
             2: {"name": "Opacity",
                 "type": {"type": "number", "min": 0, "max": 1, "step": 0.01}}
         }));
+    }
+    exportProperties(): { tool: string; properties: Object[]; } {
+        return {
+            tool: "line",
+            properties: [
+                {name: "Line Width" ,
+                value: this.lineWidth},
+                {name: "Line Cap",
+                value: this.lineCap},
+                {name: "Opacity",   
+                value: this.opacity}
+            ] 
+        };
     }
     updateProperty(propertyName: string, value: any): void {
         switch(propertyName){

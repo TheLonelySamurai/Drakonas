@@ -1,6 +1,6 @@
 
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react' 
 import { useNavigate } from 'react-router-dom';
 
 declare global {
@@ -8,6 +8,7 @@ declare global {
         
         menuNav: {
             onReturnHome: (callback: () => void) => void;
+            onReturnToWorkshop: (callback: () => void) => void;
         };
       
     }
@@ -17,12 +18,24 @@ function App() {
     useEffect(()=>{
         window.menuNav.onReturnHome(() => {
             console.log("Home?");
+            localStorage.removeItem("post_login_action");
             goHome()});
     }, []); 
         
     const goHome = () => {
         navigate('/project');
     }
-    return <></>;
+    
+    useEffect(()=>{
+        window.menuNav.onReturnToWorkshop(() => {
+            console.log("Workshop?");
+            localStorage.removeItem("post_login_action");
+            goWorkshop()});
+    }, []); 
+        
+    const goWorkshop = () => {
+        navigate('/workshop');
+    }
+    return <></>; 
 }
 export default App;

@@ -71,8 +71,8 @@ abstract class Tool {
     exportPropertiesForm(): JSON{
         return JSON.parse(JSON.stringify({}));
     }
-    exportProperties(): JSON{
-        return JSON.parse(JSON.stringify({}));
+    exportProperties():  {tool: string, properties: Object[]}{
+        return JSON.parse(JSON.stringify({tool: this.name, properties: []}));
     }
     updateProperty(propertyName: string, value: any){
         // This function will be used to update the properties of the tool when they are changed in the UI

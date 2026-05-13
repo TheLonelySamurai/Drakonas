@@ -16,7 +16,8 @@ function Workshop(){
             </div>
             <div className="animation-segments">
                 <div className="preview border-right">
-                    <div className="section-object">Animation Preview</div>
+                    <div className="section-object">Project Settings</div>
+                    <div className="project-settings-holder"></div>
                 </div>
                 <div className="large-part border-top border-right">
                     <div className="section-object">Frames</div>

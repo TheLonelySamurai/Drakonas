@@ -83,7 +83,7 @@ function StoryboardForm({name} : {name: String}){
                                 pleaseInputAResponse()
                                 return;
                             } 
-                            localStorage.setItem("create-from-storyboard", JSON.stringify(obj));
+                            localStorage.setItem("create_from_storyboard", JSON.stringify(obj));
                             goTo("/workshop");
                         }}>
                     <div id="duration" className="form-determiner-display on" ref={durationDiv}>

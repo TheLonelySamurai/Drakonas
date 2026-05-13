@@ -58,7 +58,7 @@ class Pen extends Tool{
         }));
     }
     
-    exportProperties(): Object{
+    exportProperties(): {tool: string, properties: Object[]}{
         return {
             tool: "pen",
             properties:

@@ -2,6 +2,11 @@ import { useState } from 'react'
 import {useNavigate} from 'react-router-dom'
 import NavButton from "./Partials/NavButton"
 function Login(){
+    const navigate = useNavigate(); // Hook is called at the top level
+    
+    const goTo = (url:string) => {
+        navigate(url); 
+    };
     async function login(username: string, password: string) {
         const response = await fetch("http://localhost:38451/api/login", {
             method: "POST",
@@ -35,16 +40,28 @@ function Login(){
                 console.log("Login successful!");
                 var res = JSON.parse(result);
                 localStorage.setItem('my_session_id', res.sessionId);
+                const postLoginAction = localStorage.getItem("post_login_action");
+                if (postLoginAction) {
+                    const { url, action } = JSON.parse(postLoginAction);
+                    goTo(url);
+                    return;
+                }
+                goTo("/project");
             } catch (error) {
                 console.error("Login failed:", error);
+                const errorMessageElement = document.querySelector(".error-message");
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = error ||error.message;
+                }
             }
         }} className="column-holder">
             <label htmlFor="username" className="input-holder">Username</label>
-            <input type="text" className="word-input" name="username"/>
+            <input type="text" className="word-input" required  name="username"/>
             <label htmlFor="password" className="input-holder">Password</label>
-            <input type="password" className="word-input" name="password"/>
+            <input type="password" className="word-input" required  name="password"/>
             <NavButton name="Don't have an account?" url="/signup" id="signup-nav-button"/>
             <button type="submit" className="credentials-button">Submit</button>
+            <p className="error-message"></p>
         </form>
     </div>
     )

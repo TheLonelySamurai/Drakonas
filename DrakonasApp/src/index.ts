@@ -71,10 +71,10 @@ ipcMain.handle("load-from-local-zip", async () =>{
     throw error;
   }
 })
-ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings, toolSettings})=>{
+ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings, toolSettings, userId, userSessionId})=>{
   console.log("Save to Database");
     const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
-    
+
     const projectData=new FormData;
     projectData.append('project_name',fileName);
      console.log("File found: "+(content!=null));
@@ -88,7 +88,9 @@ ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings,
     },
     body:new URLSearchParams({
       project_name:fileName,
-      project_data:content
+      project_data:content,
+      user_id: userId,
+      user_session: userSessionId || ''
     })
   });
   if (!creation.ok) {
@@ -100,10 +102,10 @@ ipcMain.handle("save-to-database", async (event, {fileName, data, layerSettings,
   return { success: false };
 })
 
-ipcMain.handle("update-to-database", async (event, {projectId, fileName, data, layerSettings, toolSettings})=>{
+ipcMain.handle("update-to-database", async (event, {projectId, fileName, data, layerSettings, toolSettings, userId, userSessionId})=>{
   console.log("Update to Database");
     const content = JSON.stringify({animationData: data, layerData: layerSettings, toolData: toolSettings});
-    
+
     const projectData=new FormData;
     projectData.append('project_name',fileName);
      console.log("File found: "+(content!=null));
@@ -118,7 +120,9 @@ ipcMain.handle("update-to-database", async (event, {projectId, fileName, data, l
     body:new URLSearchParams({
       project_name:fileName,
       project_data:content,
-      project_id: projectId
+      project_id: projectId,
+      user_id: userId,
+      user_session: userSessionId || ''
     })
   });
   if (!creation.ok) {
@@ -211,8 +215,17 @@ let javaProcess: ChildProcess | null = null;
 
 function startJavaBackend() {
   const jarPath = path.join(process.resourcesPath, "backend.jar");
+  const gcpKeyPath = path.join(process.resourcesPath, "gcp-key.json");
 
-  javaProcess = spawn("java", ["-jar", jarPath]);
+  javaProcess = spawn("java", ["-jar", jarPath], {
+    env: {
+      ...process.env,
+      DB_URL: "jdbc:mysql:///drakonas?cloudSqlInstance=intrepid-alloy-448022-p1:us-central1:drakonas-db&socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+      DB_USER: "admin",
+      DB_PASSWORD: "}B3_E2T.LcK<|nCR",
+      GOOGLE_APPLICATION_CREDENTIALS: gcpKeyPath,
+    },
+  });
 
   javaProcess.stdout.on("data", (data: any) => {
     console.log("[JAVA]", data.toString());

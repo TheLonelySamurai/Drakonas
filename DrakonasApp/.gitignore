@@ -91,3 +91,6 @@ typings/
 
 # Electron-Forge
 out/
+
+# Google Cloud Key
+resources/gcp-key.json

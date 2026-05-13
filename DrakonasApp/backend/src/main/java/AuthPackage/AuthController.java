@@ -61,9 +61,9 @@ public class AuthController {
             }
 
             try (Connection conn = Database.connect();
-                 var stmt = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_READ_ONLY)) {
-
-                ResultSet rs = stmt.executeQuery("SELECT user_password, user_id, user_email FROM users WHERE user_username = '" + username + "'");
+                 PreparedStatement pstmt = conn.prepareStatement("SELECT user_password, id, user_email FROM users WHERE user_username = ?")) {
+                pstmt.setString(1, username);
+                ResultSet rs = pstmt.executeQuery();
 
                 if (rs.next()){
                     String storedPassword=rs.getString("user_password");
@@ -71,7 +71,7 @@ public class AuthController {
                         req.session(true);
 
                         Map<String, Object> userSession = new HashMap<>();
-                        userSession.put("userId", rs.getString("user_id"));
+                        userSession.put("userId", rs.getString("id"));
                         userSession.put("username", username);
                         userSession.put("email", rs.getString("user_email"));
                         req.session().attribute("user", userSession);

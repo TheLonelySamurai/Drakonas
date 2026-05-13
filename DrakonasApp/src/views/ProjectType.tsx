@@ -9,7 +9,9 @@ function ProjectType(){
             <Backend/>
             <div className="body-screen">
                 <div className="column-holder column-holder-buttons">
-                    <NavButton name="Create from Empty" url="/workshop"/>
+                    <NavButton name="Create from Empty" url="/workshop" onClick={()=>{
+                        localStorage.setItem("create_from_blank", JSON.stringify(true));
+                    }}/>
                     <StoryboardForm name="Create from Storyboard"/>
                     {/* <NavButton name="Character/Item Animator" url="/workshop"/> */}
                 </div>  

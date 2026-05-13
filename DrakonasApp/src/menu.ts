@@ -33,19 +33,60 @@ const template = [
             label: 'Import',
             click: async () =>{
                 console.log("Import Clicked!")
+                //This should open a file dialog to open a .drkns file
+                //Functoinality is implemented, just not in the menu yet
+                BrowserWindow.getFocusedWindow()?.webContents.send('workshop');//Go to workshop page to load project from local .drkns file
+
+                BrowserWindow.getFocusedWindow()?.webContents.send('load-from-local-zip');//This is the actual loading function
             }
         },
         {
             label: 'Save',
-            click: async () =>{
-                console.log("Save Clicked!")
-            }
+            // click: async () =>{
+            //     console.log("Save Clicked!")
+            // }
+            submenu:[
+              {
+                label: 'Save to Local',
+                click: async () =>{
+                    console.log("Save to Local Clicked!")
+                  //This should open a file dialog to save a .drkns file
+                  //Functoinality is implemented, just not in the menu yet
+                  BrowserWindow.getFocusedWindow()?.webContents.send('workshop');//Go to workshop page to load project from local .drkns file
+
+                  BrowserWindow.getFocusedWindow()?.webContents.send('save-to-local-zip');//This is the actual saving function
+                }
+              },
+              {
+                label: 'Save to Database',
+                click: async () =>{
+                  BrowserWindow.getFocusedWindow()?.webContents.send('workshop');
+                  BrowserWindow.getFocusedWindow()?.webContents.send('save-to-database-menu');
+                }
+              }
+            ]
+
         },
         {
             label: 'Export',
-            click: async () =>{
-                console.log("Export Clicked!")
-            }
+            // click: async () =>{
+            //     console.log("Export Clicked!")
+              
+            // }
+            submenu:[
+              {
+                label: "Export as GIF",
+                click: async () =>{
+                  BrowserWindow.getFocusedWindow()?.webContents.send('export-gif');
+                }
+              },
+              {
+                label: "Export as MP4",
+                click: async () =>{
+                  BrowserWindow.getFocusedWindow()?.webContents.send('export-mp4');
+                }
+              }
+            ]
         },
       isMac ? { role: 'close' } : { role: 'quit' }
     ]
@@ -68,29 +109,30 @@ const template = [
           BrowserWindow.getFocusedWindow()?.webContents.send('redo');
         }
       },
-      { type: 'separator' },
-      { role: 'cut' },
-      { role: 'copy' },
-      { role: 'paste' },
-      ...(isMac
-        ? [
-            { role: 'pasteAndMatchStyle' },
-            { role: 'delete' },
-            { role: 'selectAll' },
-            { type: 'separator' },
-            {
-              label: 'Speech',
-              submenu: [
-                { role: 'startSpeaking' },
-                { role: 'stopSpeaking' }
-              ]
-            }
-          ]
-        : [
-            { role: 'delete' },
-            { type: 'separator' },
-            { role: 'selectAll' }
-          ])
+      //No time
+    //   { type: 'separator' },
+    //   { role: 'cut' },
+    //   { role: 'copy' },
+    //   { role: 'paste' },
+    //   ...(isMac
+    //     ? [
+    //         { role: 'pasteAndMatchStyle' },
+    //         { role: 'delete' },
+    //         { role: 'selectAll' },
+    //         { type: 'separator' },
+    //         {
+    //           label: 'Speech',
+    //           submenu: [
+    //             { role: 'startSpeaking' },
+    //             { role: 'stopSpeaking' }
+    //           ]
+    //         }
+    //       ]
+    //     : [
+    //         { role: 'delete' },
+    //         { type: 'separator' },
+    //         { role: 'selectAll' }
+    //       ])
     ]
   },
   // { role: 'viewMenu' }
@@ -100,12 +142,12 @@ const template = [
       { role: 'reload' },
       { role: 'forceReload' },
       { role: 'toggleDevTools' },
-      { type: 'separator' },
-      { role: 'resetZoom' },
-      { role: 'zoomIn' },
-      { role: 'zoomOut' },
-      { type: 'separator' },
-      { role: 'togglefullscreen' }
+      // { type: 'separator' },
+      // { role: 'resetZoom' },
+      // { role: 'zoomIn' },
+      // { role: 'zoomOut' },
+      // { type: 'separator' },
+      // { role: 'togglefullscreen' }
     ]
   },
   // { role: 'windowMenu' }
@@ -113,7 +155,6 @@ const template = [
     label: 'Window',
     submenu: [
       { role: 'minimize' },
-      { role: 'zoom' },
       ...(isMac
         ? [
             { type: 'separator' },
@@ -130,10 +171,10 @@ const template = [
     role: 'help',
     submenu: [
       {
-        label: 'Learn More',
+        label: 'Open Repository',
         click: async () => {
           const { shell } = require('electron')
-          await shell.openExternal('https://electronjs.org')
+          await shell.openExternal('https://github.com/TheLonelySamurai/Drakonas')
         }
       }
     ]

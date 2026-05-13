@@ -2,7 +2,14 @@ import { useEffect, useState } from 'react'
 import NavButton from './Partials/NavButton'
 import UserController from '../classes/UserController';
 import '../css/profilePage.css';
+import { useNavigate } from 'react-router-dom';
 function ProfilePage(){
+    
+    const navigate = useNavigate(); // Hook is called at the top level
+    
+    const goTo = (url:string) => {
+        navigate(url); 
+    };
     const [count,setCount] = useState(0)
     async function getJSONUserData():Promise<JSON>{
         var userData = await UserController.retrieveUser();
@@ -15,9 +22,13 @@ function ProfilePage(){
     useEffect(() => {
         var data = getJSONUserData();
         data.then(function(user){
-            if (user){
+            if (user && user != "null" && user != undefined){
                 document.getElementById('pf-page-username').innerHTML = user.username;
                 document.getElementById('pf-page-email').innerHTML = user.email;
+            }
+            else{
+                goTo("/login");
+                return;
             }
         })
     },[]);

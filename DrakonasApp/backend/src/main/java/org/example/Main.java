@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Main {
     // A simple thread-safe map to hold user data by Session ID
-    public static Map<String, Object> manualSessions = new ConcurrentHashMap<>();
+    public static Map<String, Map<String, Object >> manualSessions = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws Exception {
 

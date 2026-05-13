@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import NavButton from './Partials/NavButton';
+import { useNavigate } from 'react-router-dom';
 function SignUp(){
+    const navigate = useNavigate(); // Hook is called at the top level
+    
+    const goTo = (url:string) => {
+        navigate(url); 
+    };
     async function signup(name: string,email: string,username: string, password: string) {
         const response = await fetch("http://localhost:38451/api/signup", { 
             method: "POST",
@@ -35,14 +41,22 @@ function SignUp(){
             const password = formData.get("password") as string;
             const validate_password = formData.get("validate_password") as string;
             if (password !== validate_password) {
-                alert("Passwords do not match");
+                const errorMessageElement = document.querySelector(".error-message");
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = "Passwords do not match";
+                }
                 return;
             }
             try {
                 const result = await signup(name,email,username, password);
                 console.log("Signup successful:", result);
+                goTo("/login");
             } catch (error) {
                 console.error("Signup failed:", error);
+                const errorMessageElement = document.querySelector(".error-message");
+                if (errorMessageElement) {
+                    errorMessageElement.textContent = error || error.message;
+                }
             }
         }} className="column-holder">
             <label htmlFor="name" className="input-holder">Name</label>
@@ -56,6 +70,7 @@ function SignUp(){
             <label className="input-holder" htmlFor="validate_password">Validate Password</label>
             <input type="password" className="word-input" name="validate_password"/>
             <button type="submit" className="credentials-button">Submit</button>
+            <p className="error-message"></p>
         </form>
             <div>Have an account already? <NavButton name="Login" url="/login" id="signup-to-login-button"/></div>
     </div>

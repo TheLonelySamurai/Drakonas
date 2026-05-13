@@ -366,8 +366,9 @@
     justify-content:space-around;
     align-items:center;
     background-color:var(--bg-dark2);
-    top:25vh;
-    left:50vw;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     border-radius:5px;
     width:300px;
     height:300px;

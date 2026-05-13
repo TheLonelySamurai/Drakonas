@@ -14,8 +14,11 @@ import { rendererConfig } from './webpack.renderer.config';
 const config: ForgeConfig = {
   packagerConfig: {
     asar: true,
-    icon: './src/other/favicon' 
-  
+    icon: './src/other/favicon',
+    extraResource: [
+      './resources/backend.jar',
+      './resources/gcp-key.json',
+    ],
   },
   rebuildConfig: {},
   makers: [

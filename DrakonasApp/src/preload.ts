@@ -21,11 +21,17 @@ contextBridge.exposeInMainWorld("mainFunctions", {
   saveToDatabase: (payload: { data: any, fileName: string }) => ipcRenderer.invoke('save-to-database', payload),
   updateToDatabase: (payload: { data: any, fileName: string }) => ipcRenderer.invoke('update-to-database', payload),
   loadFromLocalZip: () => ipcRenderer.invoke("load-from-local-zip"),
-  // onSaveProjectResult: (callback: any) => ipcRenderer.on("save-finished",(_event, data) => callback(data)),
+  // Menu-push listeners (main → renderer)
+  onMenuImport: (cb: () => void) => ipcRenderer.on('load-from-local-zip', () => cb()),
+  onMenuSaveLocal: (cb: () => void) => ipcRenderer.on('save-to-local-zip', () => cb()),
+  onMenuSaveDatabase: (cb: () => void) => ipcRenderer.on('save-to-database-menu', () => cb()),
+  onMenuExportGif: (cb: () => void) => ipcRenderer.on('export-gif', () => cb()),
+  onMenuExportMp4: (cb: () => void) => ipcRenderer.on('export-mp4', () => cb()),
 });
 
 contextBridge.exposeInMainWorld('menuNav',{
-  onReturnHome: (callback: () => void) => ipcRenderer.on("projects", callback)
+  onReturnHome: (callback: () => void) => ipcRenderer.on("projects", callback),
+  onReturnToWorkshop: (callback: () => void) => ipcRenderer.on("workshop", callback),
 });
 
 contextBridge.exposeInMainWorld("historyAPI", {

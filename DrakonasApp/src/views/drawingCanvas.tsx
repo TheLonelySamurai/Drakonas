@@ -1,9 +1,9 @@
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, lazy, Suspense } from 'react';
 import { Menu, webContents } from 'electron';
 import {data, useNavigate} from 'react-router-dom';
 import { IconBase } from 'react-icons/lib';
-import { FaCog } from 'react-icons/fa';
+const FaCog = lazy(() => import('react-icons/fa').then(m => ({ default: m.FaCog })));
 import '../css/drawingCanvas.css';
 import ProjectController from '../classes/ProjectController';
 import Tool from "../classes/Tool";
@@ -12,11 +12,12 @@ import Line from "../classes/LineTool";
 import Shape from "../classes/ShapeTool";
 import Eraser from "../classes/EraserTool";
 import StrokeSettings from '../classes/StrokeSettings';
+import UserController from '../classes/UserController';
 function DrawingCanvas() { 
     const navigate = useNavigate(); // Hook is called at the top level
     const goTo = (url:string) => {
         navigate(url); 
-    };
+    }; 
     //Canvases
     //const refName = useRef<Type | null>(initialValue);
     const backgroundCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -31,6 +32,7 @@ function DrawingCanvas() {
     const framesHandler = useRef<HTMLDivElement | null>(null);
     const historyHandler = useRef<HTMLDivElement | null>(null);
     const animationHandler = useRef<HTMLDivElement | null>(null);
+    const projectSettingsHandler = useRef<HTMLDivElement | null>(null);
     const toolsHandler = useRef<HTMLDivElement | null>(null);
     const toolPropertiesMenu = useRef<HTMLDivElement | null>(null);
     const toolPropertiesMenuFormDiv = useRef<HTMLDivElement | null>(null);
@@ -41,6 +43,12 @@ function DrawingCanvas() {
     //Color inputs
     const inputPrimary = useRef<HTMLInputElement | null>(null);
     const inputSecondary = useRef<HTMLInputElement | null>(null);
+    const bgColorInputRef = useRef<HTMLInputElement | null>(null);
+    const drawBackgroundRef = useRef<(() => void) | null>(null);
+    const projectTitleInputRef = useRef<HTMLInputElement | null>(null);
+    const fpsInputRef = useRef<HTMLInputElement | null>(null);
+    const canvasWidthInputRef = useRef<HTMLInputElement | null>(null);
+    const canvasHeightInputRef = useRef<HTMLInputElement | null>(null);
     //Tool initialization
     const toolMode = useRef("pen");
     const tools = new Map<String, Tool>();
@@ -48,9 +56,6 @@ function DrawingCanvas() {
     tools.set("line", new Line());
     tools.set("shape",new Shape());
     tools.set("eraser",new Eraser());
-    //Deprecated 
-    const temporaryPoints = useRef([]);
-    const isDrawing = useRef(false);
     //Canvas Variables
     const onionSkinEnabled = useRef(false);
     const currentScale = useRef(1);
@@ -68,98 +73,249 @@ function DrawingCanvas() {
     const canvasDimensions = useRef({width: 800, height: 600});
     const fps = useRef(12);
     const projectTitle = useRef<String | null>(null);
-    
-    useEffect(() => {
-        const initialize = async () => {
-            //  localStorage.clear();
-            // Runs AFTER render, the initialization of the elements to their functionality
-            const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
-            const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
-            const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
-            if (framesHolder) {
-                framesHolder.appendChild(framesHandler.current);
-            }
-            const animationHolder = document.querySelector('.animation-holder') as HTMLElement;
-            if (animationHolder) {  
-                animationHolder.appendChild(animationHandler.current);
-            }
-            const historyHolder = document.querySelector('.history-holder') as HTMLElement;
-            if (historyHolder) {
-                historyHolder.appendChild(historyHandler.current);
-            }
-            const layerHolder = document.querySelector('.layers-holder') as HTMLElement;
-            if (layerHolder) {
-                layerHolder.appendChild(layerHandler.current);
-            }
-            const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
-            if (toolsHolder){
-                toolsHolder.appendChild(toolsHandler.current);
-            }
-            const workshopHolder = document.querySelector('.workshop') as HTMLElement;
-            if (workshopHolder){
-                workshopHolder.appendChild(toolPropertiesMenu.current);
-            }
-            const canvas = canvasRef.current;
+    //Other variables
+    const isNewProject = useRef(false);
+    const formAsk = useRef<String | null>(null);//Used to determine whether the confirmation form is asking about loading from the database or from the storyboard template, so that it can call the correct function when confirming
+    //Functions
+    const initializeViews = () => {
+        // localStorage.setItem("background_color", JSON.stringify("fff"));
+        // Runs AFTER render, the initialization of the elements to their functionality
+        const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
+        const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
+        const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
+        if (framesHolder) {
+            framesHolder.appendChild(framesHandler.current);
+        }
+        const animationHolder = document.querySelector('.animation-holder') as HTMLElement;
+        if (animationHolder) {  
+            animationHolder.appendChild(animationHandler.current);
+        }
+        const historyHolder = document.querySelector('.history-holder') as HTMLElement;
+        if (historyHolder) {
+            historyHolder.appendChild(historyHandler.current);
+        }
+        const layerHolder = document.querySelector('.layers-holder') as HTMLElement;
+        if (layerHolder) {
+            layerHolder.appendChild(layerHandler.current);
+        }
+        const projectSettingsHolder = document.querySelector('.project-settings-holder') as HTMLElement;
+        if (projectSettingsHolder) {
+            projectSettingsHolder.appendChild(projectSettingsHandler.current);
+        }
+        const toolsHolder = document.querySelector('.toolbar') as HTMLElement;
+        if (toolsHolder){
+            toolsHolder.appendChild(toolsHandler.current);
+        }
+        const workshopHolder = document.querySelector('.workshop') as HTMLElement;
+        if (workshopHolder){
+            workshopHolder.appendChild(toolPropertiesMenu.current);
+        }
+        const canvas = canvasRef.current!;
+        console.log("Load From Local?")
+        console.log(backgroundColor.current)
+        loadProjectSettingsFromLocal();
+        if (bgColorInputRef.current){
+            console.log("Changed")
+            bgColorInputRef.current.value = backgroundColor.current;
+            console.log(backgroundColor.current)
+            console.log(bgColorInputRef.current.value);
+        }
+        
+        loadProjectSettingsForm({
+            projectTitle: (projectTitle.current || "Untitled Project") as string,
+            canvasWidth: (canvasDimensions.current.width?? 800) as number,
+            canvasHeight: (canvasDimensions.current.height?? 600) as number,
+            fps: (fps.current?? 12) as number
+        });
+        Tool.canvas = canvas;
+        Tool.scale = currentScale.current; 
+        Tool.colorPrimary = inputPrimary.current.value;
+        Tool.colorSecondary = inputSecondary.current.value;
 
-            Tool.canvas = canvas;
-            Tool.scale = currentScale.current; 
-            Tool.colorPrimary = inputPrimary.current.value;
-            Tool.colorSecondary = inputSecondary.current.value;
-            
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            createToolPropertiesMenuForm();
-            
 
+        createToolPropertiesMenuForm();
+    }
+    const initialize = async () => {
+        //  localStorage.clear();
+        
+        const canvasHolder = document.querySelector('.canvas-holder') as HTMLElement;
+        const drawingApp = document.querySelector('.drawingApp') as HTMLElement;
+        const framesHolder = document.querySelector('.frames-holder') as HTMLElement;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        
+        console.log("Potential Factors to open confirm menu and mess it up: \n"+
+            "local storage vars:\n" +
+            localStorage.getItem("load_project_from_id")+"\n"+
+            localStorage.getItem("create_from_storyboard")+"\n"+
+            localStorage.getItem("create_from_blank")+"\n"+
+            "form ask: " + formAsk.current
+        )
 
         const savedFrames=localStorage.getItem("frames")
-            const currentFrame=localStorage.getItem("current_frame");
-            const currentLayer=localStorage.getItem("current_layer");
+        const currentFrame=localStorage.getItem("current_frame");
+        const currentLayer=localStorage.getItem("current_layer");
         //Load From Database
         const projectId = localStorage.getItem('load_project_from_id');
         if (projectId) {
-            // Load project data from database
-            loadProjectFromDatabase(projectId);
-            localStorage.removeItem('load_project_from_id'); // Clear the flag after loading
-        }
-            const storyboardConfig=localStorage.getItem("createFromStoryboard");
-            //From Template stuff
-            if (storyboardConfig){
-                const config = JSON.parse(storyboardConfig)
-                if(savedFrames && currentFrame && currentLayer){
-                    //Confirm overwrite menu beforehand
-                    displayConfirmationMenu();
-                }
-                else{
-                    loadStoryboardData();
-                }
-            }
             
+            // localStorage.removeItem("load_project_from_id")
+            localStorage.removeItem("create_from_storyboard")
+            localStorage.removeItem("create_from_blank")
             if(savedFrames && currentFrame && currentLayer){
-              loadFromLocal(currentFrame,currentLayer,savedFrames)  
-              drawBackground();
-                for (let i=0;i<frames.current.length;i++){
-                    addPreviewFrameToFramesHandler(i);
-                }
-                loadFrame(currentFrameIndex.current);
-                for (let i=0;i<canvasLayers.current.length;i++){
-                    addLayerPreview(i);
-                }
-                switchLayers(currentLayerIndex.current);
+                //Confirm overwrite menu beforehand
+                formAsk.current = "database";
+                displayConfirmationMenu();
+                return;
             }
             else{
-                clearCanvas();
-                clearOnionSkin();
-                drawBackground();
-                createLayer();
-                saveLayer();
-                addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
-                saveFrame();
+                // Load project data from database
+                loadProjectFromDatabase(projectId);
+                localStorage.removeItem('load_project_from_id'); // Clear the flag after loading
+                return;
             }
-            
-            // resizeDrawingApp(); Still In Progress, it resizees the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
-            moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
-        };
+        }
+        const storyboardConfig=localStorage.getItem("create_from_storyboard");
+        //From Template stuff
+        if (storyboardConfig){
+            // localStorage.removeItem("load_project_from_id")
+            localStorage.removeItem("create_from_storyboard")
+            // localStorage.removeItem("create_from_blank")
+            if(savedFrames && currentFrame && currentLayer){
+                //Confirm overwrite menu beforehand
+                displayConfirmationMenu();
+                formAsk.current = "storyboard";
+                return;
+            }
+            else{
+                loadStoryboardData();
+                return;
+            }
+        }
+
+        const fromBlankLocal = localStorage.getItem("create_from_blank")
+        if (fromBlankLocal){
+            localStorage.removeItem("load_project_from_id")
+            localStorage.removeItem("create_from_storyboard")
+            // localStorage.removeItem("create_from_blank")
+            if(savedFrames && currentFrame && currentLayer){
+                //Confirm overwrite menu beforehand
+                displayConfirmationMenu();
+                formAsk.current = "blank";
+                return;
+            }
+            else{
+                clearAllLoadedDataAndReset();
+            }
+        }
+        
+        if(savedFrames && currentFrame && currentLayer){
+            loadFromLocal(currentFrame,currentLayer,savedFrames)  
+            drawBackground();
+            for (let i=0;i<frames.current.length;i++){
+                addPreviewFrameToFramesHandler(i);
+            }
+            loadFrame(currentFrameIndex.current);
+            for (let i=0;i<canvasLayers.current.length;i++){
+                addLayerPreview(i);
+            }
+            switchLayers(currentLayerIndex.current);
+        }
+        else{
+            //Completely new project, just initialize everything to default values
+            clearCanvas();
+            clearOnionSkin();
+            drawBackground();
+            createLayer();
+            saveLayer();
+            addPreviewFrameToFramesHandler(0);//Add the first frame to the preview
+            saveFrame();
+            // Show welcome alert for new users
+            //*not implemented*//
+            // Show project settings form popup to set up the project initial settings 
+            showProjectSettingsFormPopup();
+            formAsk.current = "";
+        }
+        
+        // resizeDrawingApp(); Still In Progress, it resizes the drawing app but alongside it the canvas changes dimensions and deletes its contents, so it is currently disabled until I can find a solution to that issue
+        moveCanvas(canvasHolder.clientWidth/2 - canvas.width/2, drawingApp.clientHeight/2 - canvas.height/2);
+
+        const postLoginAction = localStorage.getItem("post_login_action");
+        if (postLoginAction) {
+            const { url, action } = JSON.parse(postLoginAction)
+            if (url !== "/workshop") {
+                localStorage.removeItem("post_login_action");
+                return;
+            }
+            if (action === "saveToDatabase") {
+                saveToDatabase();
+            }
+            localStorage.removeItem("post_login_action");
+        }
+    };
+    const clearCurrentProjectLocalStorage = () => {
+        localStorage.removeItem("frames");
+        localStorage.removeItem("current_frame");
+        localStorage.removeItem("current_layer");
+        localStorage.removeItem("tool_settings");
+        localStorage.removeItem("project_title");
+        localStorage.removeItem("canvas_width");
+        localStorage.removeItem("canvas_height");
+        localStorage.removeItem("fps");
+        localStorage.removeItem("background_color");
+        localStorage.removeItem("current_project_id");
+        localStorage.removeItem("current_project_name");
+        localStorage.removeItem("current_project_lastModified");
+    }
+    const clearAllLoadedDataAndReset = () => {
+        //Clear all canvases
+        clearCanvas();
+        clearOnionSkin();
+
+        //Clear all layers's canvases
+        if (layersDivRef.current) {
+            const canvasLayerElements=layersDivRef.current.querySelectorAll('.canvas');
+            canvasLayerElements.forEach((canvas) => {
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            });
+        }
+
+        //Remove all preview layers
+        if (layerHandler.current) {
+            const layersHolder = layerHandler.current.querySelector(".layerHolder");
+            const previewLayerElements = layersHolder.querySelectorAll('.preview-layer');
+            previewLayerElements.forEach((layer) => {
+                layer.remove();
+            });
+        }
+        //Remove all preview framesf
+        clearPreviewFrames();
+
+        //Reset all variables to their default state
+        frames.current = [[[]]];
+        currentFrameIndex.current = 0;
+        canvasLayers.current = [[]];
+        currentLayerIndex.current = 0;
+        paths.current = [];
+        undonePaths.current = [];
+        backgroundColor.current = "#FFF";
+        if (bgColorInputRef.current) bgColorInputRef.current.value = '#FFF';
+        canvasDimensions.current = {width: 800, height: 600};
+        fps.current = 12;
+        projectTitle.current = null;
+        if (projectTitleInputRef.current) projectTitleInputRef.current.value = '';
+        if (fpsInputRef.current) fpsInputRef.current.value = '12';
+        if (canvasWidthInputRef.current) canvasWidthInputRef.current.value = '800';
+        if (canvasHeightInputRef.current) canvasHeightInputRef.current.value = '600';
+        Tool.order = 0;
+    }
+    useEffect(() => {
+        
+        
+        initializeViews();
+
 
         initialize();
 
@@ -169,6 +325,16 @@ function DrawingCanvas() {
             removeUndo();
             removeRedo();
         };
+
+
+    }, []);
+
+    useEffect(() => {
+        window.mainFunctions.onMenuSaveLocal(() => { saveToLocal(); });
+        window.mainFunctions.onMenuSaveDatabase(() => { saveToDatabase(); });
+        window.mainFunctions.onMenuImport(() => { loadFromZip(); });
+        window.mainFunctions.onMenuExportGif(() => { exportToGif(); });
+        window.mainFunctions.onMenuExportMp4(() => { exportToVid(); });
     }, []);
     //Save to memory function 
 
@@ -278,7 +444,7 @@ function DrawingCanvas() {
             loadFrame(currentFrameIndex.current); // Reload the current frame to update the canvas
             // Update the preview for all frames after the removed frame
             clearPreviewFrames();
-            for (let i = frameIndex; i < frames.current.length; i++) {
+            for (let i = 0; i < frames.current.length; i++) {
                 addPreviewFrameToFramesHandler(i);
             }
         }
@@ -290,6 +456,9 @@ function DrawingCanvas() {
             previewCanvases.forEach((canvas, index) => {
                 var c = canvas.querySelector('canvas');
                 if (c){
+                    clearAnyCanvas(c);
+                    const fCtx = c.getContext('2d');
+                    if (fCtx) { fCtx.fillStyle = backgroundColor.current; fCtx.fillRect(0, 0, c.width, c.height); }
                     drawFromAllLayers(c, frames.current[index]);
                 }
             });
@@ -297,6 +466,9 @@ function DrawingCanvas() {
         function updatePreviewFrame(frameIndex: number){
             const previewCanvas = document.querySelector(`#frame-${frameIndex} canvas`) as HTMLCanvasElement;
             if (!previewCanvas) return;
+            clearAnyCanvas(previewCanvas);
+            const fCtx = previewCanvas.getContext('2d');
+            if (fCtx) { fCtx.fillStyle = backgroundColor.current; fCtx.fillRect(0, 0, previewCanvas.width, previewCanvas.height); }
             drawFromAllLayers(previewCanvas, frames.current[frameIndex]);
         }
 
@@ -354,6 +526,9 @@ function DrawingCanvas() {
             frameCanvas.width = 800;
             frameCanvas.height = 600;
             if (frames.current[frameIndex]) {
+                clearAnyCanvas(frameCanvas);
+                const fCtx = frameCanvas.getContext('2d');
+                if (fCtx) { fCtx.fillStyle = backgroundColor.current; fCtx.fillRect(0, 0, frameCanvas.width, frameCanvas.height); }
                 drawFromAllLayers(frameCanvas, frames.current[frameIndex]);
             }
             //resize the preview canvas to be smaller
@@ -403,9 +578,10 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'white';
+            ctx.fillStyle = backgroundColor.current;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
+        drawBackgroundRef.current = drawBackground;
     //Canvas related functions
         function clearCanvas() {
             const canvas = canvasRef.current;
@@ -413,32 +589,30 @@ function DrawingCanvas() {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
+        function clearAnyCanvas(canvas: HTMLCanvasElement) { 
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
         function drawFromAllLayers(canvas : HTMLCanvasElement, layers: Map<StrokeSettings, Object>[][]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            if(Array.isArray(layers))console.log("LARRAY");
-            else return;
+            if (!Array.isArray(layers)) return;
             for (let i = 0; i < layers.length; i++){
                 const pathsToDraw = layers[i];
-                if (Array.isArray(pathsToDraw))console.log("ARRAY");
-                else return;
-                for(let i = 0; i < pathsToDraw.length; i ++){
-                    let map = pathsToDraw[i];
-                    // console.log(map);
-                    map.forEach(function (value, key){
-                        // console.log("KEY: " + key + " | VALUE: " + value)
-                        if (value.path == null)return;
-                        // console.log(key);
-                        // console.log(value)
-                        ctx.fillStyle = key.fillStyle;
-                        ctx.strokeStyle = key.strokeStyle;
-                        ctx.lineWidth = key.lineWidth;
-                        ctx.lineCap  = key.lineCap;
-                        if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
-                        ctx.stroke(value.path);
-                    });
-                }
+                if (!Array.isArray(pathsToDraw)) continue;
+                const offscreen = document.createElement('canvas');
+                offscreen.width = canvas.width;
+                offscreen.height = canvas.height;
+                const offCtx = offscreen.getContext('2d');
+                if (!offCtx) continue;
+                mapDraw(offscreen, offCtx, pathsToDraw);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(offscreen, 0, 0);
             }
+            ctx.globalCompositeOperation = 'source-over';
         }
         function redrawAllLayers(){
             //When changing frames, the frames data contains the data for all layers, so we need to redraw all layers for the current frame
@@ -467,7 +641,6 @@ function DrawingCanvas() {
             if (!canvas) return;
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            console.log("Redrawing canvas with paths: ", paths.current);
             clearCanvas();
             // console.log("PATHS + " +paths.current);
             drawAnyCanvas(canvas,paths.current)
@@ -498,9 +671,7 @@ function DrawingCanvas() {
         function drawAnyCanvas(canvas : HTMLCanvasElement, pathsToDraw: Map<StrokeSettings, Object>[]){
             const ctx = canvas.getContext('2d');
             if (!ctx) return;
-            console.log("Redrawing canvas with paths: ", paths.current);
             ctx.clearRect(0,0, canvas.width, canvas.height)
-             console.log("PATHS + " +paths.current);
              mapDraw(canvas,ctx,pathsToDraw);
             // for(let i = 0; i < pathsToDraw.length; i ++){
             //     let map = pathsToDraw[i];
@@ -547,21 +718,27 @@ function DrawingCanvas() {
                     // console.log("KEY: " + key + " | VALUE: " + value)
 
                     if (value.path == null)return;
+                    if(key.isEraser){
+                        ctx.globalCompositeOperation = 'destination-out';
+                    }
+                    if (key.angle!=null){
+                        ctx.save();
+                    }
                     ctx.translate(canvas.width/2,canvas.height/2)
                     ctx.rotate(key.angle)
                     ctx.translate(-canvas.width/2,-canvas.height/2)
-                    console.log(`This angle is ${key.angle}`);
-                    // console.log(key);
-                    // console.log(value)
                     ctx.fillStyle = key.fillStyle;
                     ctx.strokeStyle = key.strokeStyle;
                     ctx.lineWidth = key.lineWidth;
                     ctx.lineCap  = key.lineCap;
                     if(key.globalAlpha)ctx.globalAlpha = key.globalAlpha;
                     ctx.stroke(value.path);
-                    ctx.translate(canvas.width/2,canvas.height/2)
-                    ctx.rotate(-key.angle)
-                    ctx.translate(-canvas.width/2,-canvas.height/2)
+                    if (key.angle!=null){
+                        ctx.restore();
+                    }
+                    if(key.isEraser){
+                        ctx.globalCompositeOperation = 'source-over';
+                    }
                 });
             }
         }
@@ -573,7 +750,7 @@ function DrawingCanvas() {
             layer.className="canvas";
             layer.width=800;
             layer.height=600;
-            layer.id=`Mainlayer-${canvasLayers.current.length}`;
+            layer.id=`Mainlayer-${canvasLayers.current.length + 1 }`;
             if (!layersDivRef.current)return;
             layersDivRef.current.appendChild(layer);
             addLayerPreview();
@@ -643,15 +820,15 @@ function DrawingCanvas() {
                 layerCanvas.height = 600;
                 const ctx = layerCanvas.getContext('2d');
                 if (!ctx) return;
-                ctx.fillStyle = 'white';
+                ctx.fillStyle = "#FFF";
                 ctx.fillRect(0, 0, layerCanvas.width, layerCanvas.height);
                 ctx.lineWidth = 1;
                 ctx.strokeStyle = 'black';
                 ctx.lineCap = 'round';
                 drawAnyCanvas(layerCanvas, canvasLayers.current[i])
                 //resize the preview canvas to be smaller
-                layerCanvas.style.width = '160px';
-                layerCanvas.style.height = '120px';
+                layerCanvas.style.width = '80px';
+                layerCanvas.style.height = '60px';
                 layerCanvasButton.appendChild(layerCanvas);
                 layerCanvasButton.addEventListener('click', () => {
                     switchLayers(i);
@@ -790,6 +967,8 @@ function DrawingCanvas() {
             localStorage.setItem("frames",JSON.stringify(data));
             localStorage.setItem("current_frame",JSON.stringify(currentFrameIndex.current));
             localStorage.setItem("current_layer",JSON.stringify(currentLayerIndex.current));
+            saveProjectSettings();
+            localStorage.setItem("tool_settings",JSON.stringify(saveToolSettingsObj()));
         }
         function loadFromLocal(currentFrame:string,currentLayer:string,savedFrames:string){
             currentFrameIndex.current=JSON.parse(currentFrame) ;
@@ -806,7 +985,6 @@ function DrawingCanvas() {
                         var path_map = layer[i][t];
                         var map=new Map<StrokeSettings,Object>()
                        for(let j = 0; j < path_map.length;j++){
-                        console.log(path_map[j])
                         if(!path_map[j].stroke || !path_map[j].path){
                             console.log("Skipped")
                             continue;
@@ -818,6 +996,7 @@ function DrawingCanvas() {
                             path:path,
                             svgStr:path_map[j].path
                         }
+                        // console.log(strokeSet,object);
                         map.set(strokeSet,object)
                        }
                        maps.push(map); 
@@ -829,18 +1008,22 @@ function DrawingCanvas() {
                 rewritten_map.push(layers) 
             }); 
 
-            frames.current=rewritten_map;    
+            frames.current=rewritten_map;
+            console.log(frames.current);    
         }
         //STORYBOARD
         function loadStoryboardData(){
-            const c = localStorage.getItem("create-from-storyboard")
-            if (!c) return;
+            clearAllLoadedDataAndReset();
+            const c = localStorage.getItem("create_from_storyboard")
+            if (!c) {initialize();return;}
             const config = JSON.parse(c);
+            console.log(config);
             //populate the pro  ject with the storyboard defaults
-            const frames = config.frames;
+            const frames = JSON.parse(config.frames);
             clearCanvas();
-            createLayer();
-            for(let i = 0; i < frames; i++){
+            saveLayer();
+            saveFrame();
+            for(let i = 0; i < frames-1; i++){
                 newFrame();
             }
             saveLayer();
@@ -852,6 +1035,10 @@ function DrawingCanvas() {
 
             //save it to local
             saveToLocal();
+            clearAllLoadedDataAndReset();
+            localStorage.removeItem("create_from_storyboard");
+            formAsk.current = "";
+            initialize();
         }
 
         //SAVE TOOL SETTINGS TO OBJECT
@@ -875,7 +1062,7 @@ function DrawingCanvas() {
                 colorPrimary: string |  CanvasGradient, 
                 colorSecondary: string | CanvasGradient,
                 order: number,
-                tools: [string, Object][]
+                tools: [string, { tool: string; properties: { name: string; value: any }[] }][] 
             })
         {
             Tool.colorPrimary = obj.colorPrimary;
@@ -900,32 +1087,110 @@ function DrawingCanvas() {
             createToolPropertiesMenuForm();
             
         }
+        //SAVE PROJECT SETTINGS
+        function saveProjectSettings(){
+            localStorage.setItem("project_title", JSON.stringify(projectTitle.current));
+            localStorage.setItem("canvas_width", JSON.stringify(canvasDimensions.current.width));
+            localStorage.setItem("canvas_height", JSON.stringify(canvasDimensions.current.height));
+            localStorage.setItem("fps", JSON.stringify(fps.current));
+            localStorage.setItem("background_color",JSON.stringify( (backgroundColor.current).slice(1,backgroundColor.current.length)));
+            
+        }
+        //LOAD PROJECT SETTINGS FROM LOCAL
+        function loadProjectSettingsFromLocal(){
+            projectTitle.current = JSON.parse(localStorage.getItem("project_title") || "Untitled");
+            canvasDimensions.current.width = JSON.parse(localStorage.getItem("canvas_width")||"800");
+            canvasDimensions.current.height = JSON.parse(localStorage.getItem("canvas_height")||"600");
+            fps.current = JSON.parse(localStorage.getItem("fps") || "12");
+            backgroundColor.current = "#"+JSON.parse(localStorage.getItem("background_color")||"FFF");
+            console.log(backgroundColor.current)
+        }
+        //LOAD PROJECT SETTINGS
+        function loadProjectSettingsForm(obj: {projectTitle: string, canvasWidth: number, canvasHeight: number, fps: number}){
+            projectTitle.current = obj.projectTitle;
+            canvasDimensions.current.width = obj.canvasWidth;
+            canvasDimensions.current.height = obj.canvasHeight;
+            fps.current = obj.fps;
+            if (projectTitleInputRef.current) projectTitleInputRef.current.value = obj.projectTitle ?? '';
+            if (fpsInputRef.current) fpsInputRef.current.value = String(obj.fps);
+            if (canvasWidthInputRef.current) canvasWidthInputRef.current.value = String(obj.canvasWidth);
+            if (canvasHeightInputRef.current) canvasHeightInputRef.current.value = String(obj.canvasHeight);
+
+        }
+
         //SAVE PROJECT TO ZIP
         async function saveToZip(){
             var animationData = save();
             var object = saveToolSettingsObj()
+            saveProjectSettings();
+            var project = {
+                projectTitle: projectTitle.current,
+                canvasWidth: canvasDimensions.current.width,
+                canvasHeight: canvasDimensions.current.height,
+                fps: fps.current
+            }
             await window.mainFunctions.saveToZip({
-                fileName: "TestSave",
+                fileName: projectTitle.current,
                 data: animationData,
                 layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
-                toolSettings: object
+                toolSettings: object,
+                projectSettings: project
             });
+
         }
         //SAVE PROJECT TO DATABASE
         async function saveToDatabase(){//Saves or Creates a project depending on if there is a saved project ID to update, if there is not it creates a new project
             var animationData = save();
             var object = saveToolSettingsObj()
+            saveProjectSettings();
+            var project = {
+                projectTitle: projectTitle.current,
+                canvasWidth: canvasDimensions.current.width,
+                canvasHeight: canvasDimensions.current.height,
+                fps: fps.current
+            }
+            
+            var user;
+            var userId;
+            try{
+                user = JSON.parse(await UserController.retrieveUser());
+                userId = user.userId;
+            } catch (err){
+                console.error("User ID not found.");
+                localStorage.setItem("post_login_action", JSON.stringify({ url: "/workshop", action: "saveToDatabase" }));
+                goTo("/login");
+            }
+
+            if (!userId) {
+                console.error("User ID not found.");
+                localStorage.setItem("post_login_action", JSON.stringify({ url: "/workshop", action: "saveToDatabase" }));
+                goTo("/login");
+                return;
+            }
+
+            var projectData = {
+                    projectId: localStorage.getItem("current_project_id") || undefined,
+                    fileName: projectTitle.current,
+                    data: animationData,
+                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
+                    toolSettings: object,
+                    projectSettings: project, 
+                    userId: userId,
+                    sessionId: localStorage.getItem("project_session_id"),
+                    userSessionId: localStorage.getItem("my_session_id")
+                };
             var isNewProject = true;
-            if (!localStorage.getItem("my_session_id")){
-                console.log("isNewProject mysessionid: ", isNewProject);
+
+            if (!localStorage.getItem("project_session_id")){
+                console.log("isNewProject project_session_id: ", isNewProject);
                 // alert("No session ID found. Please log in to save your project.");
                 // return;
                 isNewProject = true;
             }
             else{
                 console.log("isNewProject: ", isNewProject);
-                var sessionData = await ProjectController.retrieveProjectInfo();
-                if (!sessionData){
+                var sessionData = JSON.parse(await ProjectController.retrieveProjectInfo());
+                if (!sessionData ){
                     console.log("isNewProject !sessionData: ", isNewProject);
                     // alert("No project ID found. Please create a new project to save.");
                     // return;
@@ -955,22 +1220,12 @@ function DrawingCanvas() {
             if (isNewProject){
                 console.log("Creating new project in database...");
                 console.log("current_project_id: ", localStorage.getItem("current_project_id"));
-                res = await window.mainFunctions.saveToDatabase({
-                    fileName: "TestSave1",
-                    data: animationData,
-                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
-                    toolSettings: object
-                });
+                res = await window.mainFunctions.saveToDatabase(projectData);
             } else{
                 console.log("Updating existing project in database...");
                 console.log("current_project_id: ", localStorage.getItem("current_project_id"));
-                res = await window.mainFunctions.updateToDatabase({
-                    projectId: localStorage.getItem("current_project_id"),
-                    fileName: "TestSave1",
-                    data: animationData,
-                    layerSettings: {numLayers: canvasLayers.current.length},//None are implemented yet (this would be the opacity of an entire layer)
-                    toolSettings: object
-                });
+                projectData.projectId = localStorage.getItem("current_project_id");
+                res = await window.mainFunctions.updateToDatabase(projectData);
             }
             if (res.success){
                 // Handle success casei
@@ -978,8 +1233,8 @@ function DrawingCanvas() {
                     const data = res.data;
             
                     console.log("Project saved successfully with ID:", data.projectId);
-                    alert(`Project saved successfully with ID: ${data.projectName}`);
-                    localStorage.setItem("my_session_id", data.sessionId);
+                    alert(`${data.projectName} saved successfully!`);
+                    localStorage.setItem("project_session_id", data.sessionId);
                     localStorage.setItem("current_project_id", data.projectId);
                     localStorage.setItem("current_project_name", data.projectName);
                     localStorage.setItem("current_project_lastModified", data.projectLastModified);
@@ -993,48 +1248,57 @@ function DrawingCanvas() {
                 const data = await window.mainFunctions.loadFromLocalZip();
                 if (data){
                     loadFromLocal("0", "0", JSON.stringify(data.animationData));
-                    console.log(data.layerData);
-                    console.log(data.toolData);
                     loadToolSettings(data.toolData);
                     saveToLocal();
                     //Redirect to the same page to reload.
                     // goTo("/workshop");
+                    clearAllLoadedDataAndReset();  
+                    initialize();
                 }
                 else{
                     console.log("No Data");
+                    initialize();
                 }
             }
             catch(error: any){
                 console.error("Load failed:", error);
-                // Explicitly show the error message so we know what's happening
+                // Explicitly show the error message so we know what's happening 
                 alert(`Load Error: ${error.message || error}`);
+                initialize();
             }
         }
         //LOAD FROM DATABASE
         async function loadProjectFromDatabase(projectId: string){
+            clearAllLoadedDataAndReset();
             try{
                 const json = await ProjectController.loadProject(projectId);
                 const obj = JSON.parse(json);
                 if (obj){
                     const sessionId = obj.sessionId;
-                    localStorage.setItem("my_session_id", sessionId);
+                    localStorage.setItem("project_session_id", sessionId);
                     const data = JSON.parse(obj.projectData);
+                    console.log(data.animationData)
                     loadFromLocal("0", "0", JSON.stringify(data.animationData));
                     console.log(data.layerData);
                     console.log(data.toolData);
                     loadToolSettings(data.toolData);
                     saveToLocal();
                     //Redirect to the same page to reload.
-                    goTo("/workshop");
+                    localStorage.removeItem("load_project_from_id");
+                    initialize();
                 }
                 else{
                     console.log("No Data");
+                    localStorage.removeItem("load_project_from_id");
+                    initialize();
                 }
             }
             catch(error: any){
                 console.error("Load failed:", error);
                 // Explicitly show the error message so we know what's happening
                 alert(`Load Error: ${error.message || error}`);
+                localStorage.removeItem("load_project_from_id");
+                initialize();
             } 
         }
         //EXPORT TO GIF
@@ -1046,10 +1310,15 @@ function DrawingCanvas() {
             if (!ctx) return;
             const frameData = frames.current.map(frameLayers => {
             
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Use your existing drawing function here
+                const offscreen = document.createElement('canvas');
+                offscreen.width = canvas.width;
+                offscreen.height = canvas.height;
+                const offCtx = offscreen.getContext('2d');
+                if (!offCtx) return;
+                offCtx.fillStyle = backgroundColor.current;
+                offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(offscreen, 0, 0);
                 drawFromAllLayers(canvas, frameLayers); 
 
                 // Get raw pixel data/
@@ -1082,10 +1351,15 @@ function DrawingCanvas() {
             if (!ctx) return; 
             const frameData = frames.current.map(frameLayers => {
             
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = 'white';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                // Use your existing drawing function here
+                const offscreen = document.createElement('canvas');
+                offscreen.width = canvas.width;
+                offscreen.height = canvas.height;
+                const offCtx = offscreen.getContext('2d');
+                if (!offCtx) return;
+                offCtx.fillStyle = backgroundColor.current;
+                offCtx.fillRect(0, 0, offscreen.width, offscreen.height);
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.drawImage(offscreen, 0, 0);
                 drawFromAllLayers(canvas, frameLayers); 
 
                 // Get raw pixel data/
@@ -1121,7 +1395,7 @@ function DrawingCanvas() {
     }
 
     function handleMouseDown(e: React.MouseEvent<HTMLCanvasElement>) {
-        if (isMovingCanvas.current) return; // Don't start drawing if we're moving the canvas
+        if (isMovingCanvas.current || e.altKey) return; // Don't start drawing if we're moving the canvas
         // if (toolMode.current == "pen"){
         //     // Reset the undone paths when starting a new path
         //     undonePaths.current = [];
@@ -1208,10 +1482,10 @@ function DrawingCanvas() {
             lastPos.current = getMousePosMoveCanvas(e);
         }
         if (e.altKey){
-            isDrawing.current = false;
             isMovingCanvas.current = true;
             movingCanvas.current = true;
             wasByAlt.current = true;
+            lastPos.current = getMousePosMoveCanvas(e);
         }
         
     }
@@ -1219,7 +1493,7 @@ function DrawingCanvas() {
     function handleMouseUpMoveCanvas() {
         if (movingCanvas.current) {
             movingCanvas.current = false;
-            if(wasByAlt){
+            if(wasByAlt.current){
                 isMovingCanvas.current = false;
                 wasByAlt.current = false;
             }
@@ -1323,6 +1597,9 @@ function DrawingCanvas() {
             redrawCanvas();
         }
         console.log("UNDO")
+        saveLayer();
+        saveFrame();
+        saveToLocal();
     }
     function redo(){
         const lastUndonePath = undonePaths.current.pop();
@@ -1331,6 +1608,9 @@ function DrawingCanvas() {
             redrawCanvas();
         }
         console.log("REDO")
+        saveLayer();
+        saveFrame();
+        saveToLocal();
     }
 // Tool Functions
     function swapTool(newTool: string){
@@ -1338,6 +1618,7 @@ function DrawingCanvas() {
         createToolPropertiesMenuForm();
     }
 //CSS related functions
+
     function moveCanvasButton(){
         if (isMovingCanvas.current) {
             isMovingCanvas.current = false;
@@ -1464,21 +1745,91 @@ function DrawingCanvas() {
         
         menuHolder.appendChild(form);
     }
+    function showProjectSettingsFormPopup(){
+        // Implementation for showing project settings form popup
+        if (!projectSettingsHandler.current) return;
+        //This will actually just edit the position of the projectSettings div 
+        // until the user confirms the form the first time
+        // afterwards, the form will be in the designated non-popup area
+        
+
+        loadProjectSettingsFromLocal();
+        if(projectSettingsHandler.current.classList.contains("pop-up")){
+            projectSettingsHandler.current.classList.remove('pop-up');
+            // projectSettingsHandler.current.addEventListener('click', ()=>{
+            //     if (projectSettingsHandler.current?.classList.contains('pop-up')){
+            //         return;
+            //     }
+            //     showProjectSettingsFormPopup()
+            // });
+            //Add readonly to all inputs
+            var inputs = projectSettingsHandler.current.querySelectorAll("input");
+            for(let i = 0; i < inputs.length; i ++){
+                inputs[i].readOnly = true;
+            }
+            //Remove the submit button
+            
+            projectSettingsHandler.current.querySelector("#project-settings-submit-button")?.remove();
+            //Move it back to the projectSettingsHolder div
+            const holder = document.querySelector('.project-settings-holder');
+            if (holder) holder.appendChild(projectSettingsHandler.current);
+            
+        }
+        else{
+            loadProjectSettingsForm({
+                projectTitle: (projectTitle.current || "Untitled Project") as string,
+                canvasWidth: (canvasDimensions.current.width?? 800) as number,
+                canvasHeight: (canvasDimensions.current.height?? 600) as number,
+                fps: (fps.current?? 12) as number
+            });
+            //Move it out of the projectSettingsHolder div to the body so it can be a popup
+            if (projectSettingsHandler.current.parentElement && projectSettingsHandler.current.parentElement.classList.contains("project-settings-holder")){
+                document.body.querySelector('.page')?.appendChild(projectSettingsHandler.current); 
+            }
+            //Remove readonly to all inputs
+            var inputs = projectSettingsHandler.current.querySelectorAll("input");
+            for(let i = 0; i < inputs.length; i ++){
+                if (isNewProject.current){
+                    inputs[i].readOnly = false;
+                    continue;
+                }
+                else{
+                    if (inputs[i].id == "canvas-width" || inputs[i].id == "canvas-height"){
+                        continue;
+                    }
+                    inputs[i].readOnly = false;
+                }
+                
+            }
+            projectSettingsHandler.current.style.animation = 'fadeIn 0.3s ease-out forwards';
+            projectSettingsHandler.current.classList.add('pop-up');
+            projectSettingsHandler.current.style.display = "flex";
+            //add a submit button
+            const submitButton = document.createElement('button');
+            submitButton.id = "project-settings-submit-button";
+            submitButton.type = "submit";
+            submitButton.textContent = "Submit";
+            submitButton.addEventListener('click', (e)=>{
+                e.preventDefault();
+                showProjectSettingsFormPopup();
+            });
+            projectSettingsHandler.current.appendChild(submitButton);
+        }
+    }
     function displayConfirmationMenu(){
         if(!confirmationform.current)return;
         
         if(confirmationform.current.classList.contains("on")){
             confirmationform.current.classList.remove('on');
             confirmationform.current.classList.add('off');
+            if (formAsk.current == "database"){
+                localStorage.removeItem("project_session_id");
+            }
         }
         else if(confirmationform.current.classList.contains("off")){
             confirmationform.current.classList.remove('off');
             confirmationform.current.classList.add('on');
         }
-    }
-    async function getUserConfirmation(){
-        //Open the form
-        displayConfirmationMenu();
     }
     
     return (
@@ -1541,110 +1892,110 @@ function DrawingCanvas() {
             </div>
         </div>
         <div className="dc-vert-container animationHandler" ref ={animationHandler}>
-        <h3>Animation Handler</h3>
-        <div className="dc-hor-container animationButtons">
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            newFrame();
-        }}>
-            New Frame
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            if (currentFrameIndex.current <= 0) return; // No previous frame
-            loadFrame(currentFrameIndex.current - 1);
-        }}>
-            Prev Frame
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            if (currentFrameIndex.current >= frames.current.length - 1) return; // No next frame
-            loadFrame(currentFrameIndex.current + 1);
-        }}>
-            Next Frame
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            if (currentFrameIndex.current <= 0) return; // No previous frames
-            loadOnionSkin(currentFrameIndex.current - 1);
-        }}>
-            Onion On
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            clearOnionSkin();
-        }}>
-            Onion Off
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            exportToGif();
-        }}>
-            Export to GIF
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            exportToVid();
-        }}>
-            Export to Video
-        </button>
-        
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            saveToZip(); 
-        }}>
-            Save To File
-        </button>
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            loadFromZip(); 
-        }}>
-            Load From File
-        </button>
-        
-        <button onClick={() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-            localStorage.clear(); 
-        }}>
-            Clear Local Storage
-        </button>
-        <button onClick={() => {
-            saveToDatabase();
-        }}>
-            Save to Database
-        </button>
-    
-        </div>
+            <h3>Animation Handler</h3>
+            <div className="dc-hor-container animationButtons">
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    newFrame();
+                }}>
+                    New Frame
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    if (currentFrameIndex.current <= 0) return; // No previous frame
+                    loadFrame(currentFrameIndex.current - 1);
+                }}>
+                    Prev Frame
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    if (currentFrameIndex.current >= frames.current.length - 1) return; // No next frame
+                    loadFrame(currentFrameIndex.current + 1);
+                }}>
+                    Next Frame
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    if (currentFrameIndex.current <= 0) return; // No previous frames
+                    loadOnionSkin(currentFrameIndex.current - 1);
+                }}>
+                    Onion On
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    clearOnionSkin();
+                }}>
+                    Onion Off
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    exportToGif();
+                }}>
+                    Export to GIF
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    exportToVid();
+                }}>
+                    Export to Video
+                </button>
+                
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    saveToZip(); 
+                }}>
+                    Save To File
+                </button>
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    loadFromZip(); 
+                }}>
+                    Load From File
+                </button>
+                
+                <button onClick={() => {
+                    const canvas = canvasRef.current;
+                    if (!canvas) return;
+                    const ctx = canvas.getContext('2d');
+                    if (!ctx) return;
+                    displayConfirmationMenu();
+                }}>
+                    Clear Local Storage
+                </button>
+                <button onClick={() => {
+                    saveToDatabase();
+                }}>
+                    Save to Database
+                </button>
+            
+            </div>
         </div> 
         <div className='dc-vert-container' ref={framesHandler}></div>
         <div className='dc-vert-container' ref={layerHandler}>
@@ -1653,11 +2004,63 @@ function DrawingCanvas() {
 
             </div>
             <div className="backgroundLayerPreviewHolder">
-
+                <label>Background</label>
+                <input
+                    type="color"
+                    ref={bgColorInputRef}
+                    defaultValue={backgroundColor.current}
+                    onChange={(e) => {
+                        backgroundColor.current = e.target.value;
+                        saveProjectSettings();
+                        drawBackgroundRef.current?.();
+                        updateAllPreviewFrames();
+                        updateAllPreviewLayers();
+                        saveLayer();
+                        saveFrame();
+                        saveToLocal();
+                        console.log(localStorage.getItem("background_color"))
+                    }}
+                />
             </div>
             <div className="layerSettingsBar">
 
             </div>
+        </div>
+        <div className='dc-vert-container project-settings-handler' ref={projectSettingsHandler} onClick={()=>{
+            
+            if (projectSettingsHandler.current?.classList.contains('pop-up')){
+                return;
+            }
+            else{
+                showProjectSettingsFormPopup()
+            }
+        }}>
+                <h3>Project Settings</h3>
+                <form onSubmit={(e)=>{
+                    e.preventDefault();
+                }}>
+                    <label htmlFor="project-title">Project Title:</label><br></br>
+                    <input type="text" id="project-title" readOnly name="project-title" ref={projectTitleInputRef} defaultValue={projectTitle.current?.toString() ?? ''} onChange={(e)=>{
+                        projectTitle.current = e.target.value;
+                    }}></input>
+                    <label htmlFor="fps">Frames Per Second:</label><br></br>
+                    <input type="number" id="fps" name="fps" readOnly ref={fpsInputRef} defaultValue={fps.current} onChange={(e)=>{
+                        fps.current = Number(e.target.value);
+                    }}></input>
+                    <label htmlFor="canvas-width">Canvas Width:</label><br></br>
+                    <input type="number" id="canvas-width" readOnly name="canvas-width" ref={canvasWidthInputRef} defaultValue={canvasDimensions.current.width} onChange={(e)=>{
+                        if (isNewProject.current){
+                            canvasDimensions.current.width = Number(e.target.value);
+                        }
+                    }}></input>
+                    <label htmlFor="canvas-height">Canvas Height:</label><br></br>
+                    <input type="number" id="canvas-height" readOnly name="canvas-height" ref={canvasHeightInputRef} defaultValue={canvasDimensions.current.height} onChange={(e)=>{
+                        if(isNewProject.current){
+                            canvasDimensions.current.height = Number(e.target.value);
+                        }
+                    }}></input>
+                    
+                </form>
         </div>
         <div className='dc-vert-container tools-handler' ref={toolsHandler}>
             <button className="toolbar-button" onClick={() => {
@@ -1684,15 +2087,6 @@ function DrawingCanvas() {
                 const ctx = canvas.getContext('2d');
                 if (!ctx) return;
                 toolMode.current = "eraser"
-            }}>
-               Eraser Tool 
-            </button>
-            <button className="toolbar-button" onClick={() => {
-                const canvas = canvasRef.current;
-                if (!canvas) return;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                toolMode.current = "eraser";
             }}>
                Eraser Tool 
             </button>
@@ -1754,7 +2148,7 @@ function DrawingCanvas() {
  
         <div className="tool-properties-menu closed" ref={toolPropertiesMenu}>
             <div className="dc-vert-container">
-                <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3></button></div>
+                <div className="tool-properties-title" ><button className="div-like-clickable-button" onClick={() => {openCloseToolProperties()}}><h3>Tool Properties</h3><Suspense fallback={null}><FaCog id="fa-cog"/></Suspense></button></div>
                 <div className="tool-properties-content" ref={toolPropertiesMenuFormDiv}>
                 </div>
             </div>
@@ -1787,10 +2181,35 @@ function DrawingCanvas() {
                 <h2>Overwrite Currently Open Project?</h2> 
                 <form id="overwrite-saved-project" onSubmit={(e)=>{
                         e.preventDefault();
-                        loadStoryboardData();
+                        if (formAsk.current == "storyboard"){
+                            clearCurrentProjectLocalStorage();
+                            loadStoryboardData();
+                            showProjectSettingsFormPopup();
+                            isNewProject.current = true;
+                        }
+                        else if (formAsk.current == "database"){
+                            loadProjectFromDatabase(localStorage.getItem('load_project_from_id'));
+                        }
+                        else if (formAsk.current == "zip"){
+                            loadFromZip();
+                        }
+                        else if (formAsk.current == "fromBlank"){
+                            clearAllLoadedDataAndReset();
+                            clearCurrentProjectLocalStorage();
+                            showProjectSettingsFormPopup();
+                            isNewProject.current = true; 
+                        }
+                        displayConfirmationMenu();
                     }}>
                 <button type="submit" form="overwrite-saved-project" className="confirm-form-button red">Yes</button>
-                <a className="confirm-form-button" onClick={displayConfirmationMenu}>No</a>
+                <a className="confirm-form-button" onClick={()=>{
+                    displayConfirmationMenu();
+                    localStorage.removeItem("load_project_from_id")
+                    localStorage.removeItem("create_from_storyboard")
+                    localStorage.removeItem("create_from_blank")
+                    formAsk.current = "";
+                    initialize();
+                }}>No</a>
                 </form>   
             </div>
         </div>
