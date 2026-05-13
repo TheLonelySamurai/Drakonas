@@ -220,9 +220,9 @@ function startJavaBackend() {
   javaProcess = spawn("java", ["-jar", jarPath], {
     env: {
       ...process.env,
-      DB_URL: "jdbc:mysql:///drakonas?cloudSqlInstance=intrepid-alloy-448022-p1:us-central1:drakonas-db&socketFactory=com.google.cloud.sql.mysql.SocketFactory",
-      DB_USER: "admin",
-      DB_PASSWORD: "}B3_E2T.LcK<|nCR",
+      DRAKONAS_DB_URL: "jdbc:mysql:///drakonas?cloudSqlInstance=intrepid-alloy-448022-p1:us-central1:drakonas-db&socketFactory=com.google.cloud.sql.mysql.SocketFactory",
+      DRAKONAS_DB_USER: "admin",
+      DRAKONAS_DB_PASSWORD: "}B3_E2T.LcK<|nCR",
       GOOGLE_APPLICATION_CREDENTIALS: gcpKeyPath,
     },
   });
@@ -303,6 +303,10 @@ app.commandLine.appendSwitch(
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(async () => {
+  
+  startJavaBackend();
+  await waitForBackend();
+  
   var win = createWindow()
 
   // This ensures Electron doesn't strip the cookie when moving between ports

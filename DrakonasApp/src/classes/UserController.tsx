@@ -15,6 +15,7 @@ class UserController{
         return text;
       } catch (err) {
         console.error("Backend not reachable:", err);
+        return JSON.stringify({});
       }
     }
 }
